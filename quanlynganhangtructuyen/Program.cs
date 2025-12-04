@@ -1,11 +1,20 @@
-var builder = WebApplication.CreateBuilder(args);
+﻿using DAL;
+using Microsoft.EntityFrameworkCore;
 
-// Add services to the container.
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDbContext<NganHangDbContext>(tuyChon =>
+    tuyChon.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddScoped<KhachHangDAL>();
+// Nếu có BLL thì thêm:
+// builder.Services.AddScoped<KhachHangBusiness>();
+
 
 var app = builder.Build();
 

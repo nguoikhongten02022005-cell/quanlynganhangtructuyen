@@ -1,3 +1,6 @@
 <Solution>
+  <Project Path="BLL/BLL.csproj" Id="e5637712-7019-44a2-ac47-a6e945130f81" />
+  <Project Path="DAL/DAL.csproj" Id="95cf9294-06d0-43f7-9f28-141958d0ba00" />
+  <Project Path="Model/Model.csproj" Id="f456096a-aa96-4217-addd-de03fd77ec02" />
   <Project Path="quanlynganhangtructuyen/quanlynganhangtructuyen.csproj" />
 </Solution>

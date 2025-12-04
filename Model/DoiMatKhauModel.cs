@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Model
 {
-    internal class AuthResponseModel
+    public class DoiMatKhauModel
     {
-        public string Token { get; set; } = "";
-        public CustomerModel Customer { get; set; } = new();
+        public string MatKhauCu { get; set; } = "";
+        public string MatKhauMoi { get; set; } = "";
     }
 }

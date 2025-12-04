@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace Model
 {
-    internal class RegisterModel
+    public class PhanHoiDangNhapModel
     {
+        public string Token { get; set; } = "";
+        public KhachHangModel Customer { get; set; } = new();
     }
 }

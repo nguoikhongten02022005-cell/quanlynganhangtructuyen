@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Model
 {
-    internal class CustomerModel
+    public class KhachHangModel
     {
         public int Id { get; set; }
-        public string FullName { get; set; }
-        public string Email { get; set; }
-        public string Phone { get; set; }
+        public string HoTen { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string SoDienThoai { get; set; } = "";
     }
 }
