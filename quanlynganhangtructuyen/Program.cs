@@ -9,7 +9,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<NganHangDbContext>(tuyChon =>
-    tuyChon.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    tuyChon.UseSqlServer(
+        builder.Configuration.GetConnectionString("Default"),
+        sql => sql.CommandTimeout(30)));
 
 builder.Services.AddScoped<KhachHangDAL>();
 // Nếu có BLL thì thêm:
