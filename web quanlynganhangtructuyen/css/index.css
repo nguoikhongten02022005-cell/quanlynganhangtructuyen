@@ -1,0 +1,294 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+.background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("../img/photo_2025-12-05_20-40-27.jpg") center/cover no-repeat;
+    overflow: hidden;
+}
+
+.stars {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 3s infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+.building {
+    position: absolute;
+    bottom: 0;
+}
+
+.building-left {
+    left: 10%;
+    width: 120px;
+    height: 180px;
+    background: linear-gradient(to right, #8B7355 0%, #A0826D 50%, #8B7355 100%);
+}
+
+.building-left-small {
+    left: 5%;
+    width: 80px;
+    height: 140px;
+    background: linear-gradient(to right, #A0826D 0%, #C19A6B 50%, #A0826D 100%);
+}
+
+.building-center {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 180px;
+    height: 500px;
+    background: linear-gradient(to bottom, #f4e4c1 0%, #d4b896 30%, #a08860 100%);
+    position: relative;
+    box-shadow: 0 0 60px rgba(244, 228, 193, 0.6);
+}
+
+.building-top {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 80px;
+    background: linear-gradient(to bottom, #f4e4c1, #d4b896);
+    box-shadow: 0 0 40px rgba(244, 228, 193, 0.8);
+}
+
+.building-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(255, 255, 200, 0.3), transparent);
+}
+
+.window-grid {
+    position: absolute;
+    top: 100px;
+    width: 100%;
+    height: calc(100% - 100px);
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    padding: 10px;
+}
+
+.window {
+    background: rgba(255, 255, 150, 0.7);
+    animation: windowFlicker 4s infinite;
+}
+
+@keyframes windowFlicker {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 0.3; }
+}
+
+.building-right {
+    right: 10%;
+    width: 140px;
+    height: 200px;
+    background: linear-gradient(to right, #8B7355 0%, #A0826D 50%, #8B7355 100%);
+}
+
+.building-right-far {
+    right: 5%;
+    width: 100px;
+    height: 160px;
+    background: linear-gradient(to right, #A0826D 0%, #C19A6B 50%, #A0826D 100%);
+}
+
+.logo {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 100;
+}
+
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    background: white;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.login-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+    width: 400px;
+}
+
+.title {
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    margin-bottom: 40px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+input {
+    width: 100%;
+    padding: 15px 45px 15px 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+}
+
+input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+input:focus {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.input-icon {
+    position: absolute;
+    right: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.captcha-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.captcha-group input {
+    flex: 1;
+}
+
+.captcha-image {
+    background: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    color: #0a3d2e;
+    letter-spacing: 3px;
+    font-size: 18px;
+    font-style: italic;
+    text-decoration: line-through;
+}
+
+.refresh-icon {
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.forgot-password {
+    text-align: right;
+    margin: 15px 0;
+}
+
+.forgot-password a {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    transition: opacity 0.3s;
+}
+
+.forgot-password a:hover {
+    opacity: 0.8;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(to right, #6fb33f, #4a9d2f);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 20px;
+}
+
+.login-btn:hover {
+    background: linear-gradient(to right, #5fa030, #3a8d20);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(111, 179, 63, 0.4);
+}
+
+.appointment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: white;
+    margin-top: 30px;
+    font-size: 14px;
+}
+
+.appointment-icon {
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

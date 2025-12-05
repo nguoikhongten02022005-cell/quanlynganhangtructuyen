@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCB Digibank - Đăng nhập</title>
+    <link rel="stylesheet" href="../css/index.css">
+</head>
+<body>
+    <div class="background"></div>
+
+    <div class="login-container">
+        <h1 class="title">VCB<span style="font-weight: normal;">Digibank</span></h1>
+        <p class="subtitle">Xin kính chào Quý khách</p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <input type="text" placeholder="Tên đăng nhập" id="username">
+                    <span class="input-icon">ⓘ</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <input type="password" placeholder="Mật khẩu" id="password">
+                    <span class="input-icon" onclick="togglePassword()">👁</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="captcha-group">
+                    <input type="text" placeholder="Mã kiểm tra" id="captcha">
+                    <span class="captcha-image" id="captchaText">61977</span>
+                    <span class="refresh-icon" onclick="refreshCaptcha()">↻</span>
+                </div>
+            </div>
+
+            <div class="forgot-password">
+                <a href="#">Quên mật khẩu?</a>
+            </div>
+
+            <button type="submit" class="login-btn">Đăng nhập</button>
+        </form>
+    </div>
+
+    <script src="../js/index.js"></script>
+</body>
+</html>
