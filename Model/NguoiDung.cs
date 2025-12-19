@@ -15,3 +15,4 @@ namespace Model
         public DateTime NgayTao { get; set; }
     }
 }
+

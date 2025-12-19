@@ -1,5 +1,9 @@
 ﻿using DAL;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,12 +12,12 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<NganHangDbContext>(tuyChon =>
+builder.Services.AddDbContext<NganHangDAL>(tuyChon =>
     tuyChon.UseSqlServer(
         builder.Configuration.GetConnectionString("Default"),
         sql => sql.CommandTimeout(30)));
 
-builder.Services.AddScoped<KhachHangDAL>();
+
 // Nếu có BLL thì thêm:
 // builder.Services.AddScoped<KhachHangBusiness>();
 
