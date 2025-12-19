@@ -9,4 +9,5 @@ public class NganHangDAL : DbContext
 
     public DbSet<NguoiDung> NguoiDung { get; set; } = null!;
     public DbSet<KhachHang> KhachHang { get; set; } = null!;
+    public DbSet<TaiKhoan> TaiKhoan { get; set; } = null!;
 }

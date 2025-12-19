@@ -12,11 +12,8 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<NganHangDAL>(tuyChon =>
-    tuyChon.UseSqlServer(
-        builder.Configuration.GetConnectionString("Default"),
-        sql => sql.CommandTimeout(30)));
-
+builder.Services.AddDbContext<NganHangDAL>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 // Nếu có BLL thì thêm:
 // builder.Services.AddScoped<KhachHangBusiness>();
