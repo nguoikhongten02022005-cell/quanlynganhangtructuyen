@@ -13,5 +13,7 @@ namespace Model
         public string MatKhauHash { get; set; } = "";
         public string VaiTro { get; set; } = "CUSTOMER";
         public DateTime NgayTao { get; set; }
+      
     }
 }
+

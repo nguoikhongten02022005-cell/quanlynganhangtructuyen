@@ -17,3 +17,4 @@ namespace Model
         public string TrangThaiKYC { get; set; } = "PENDING";
     }
 }
+
