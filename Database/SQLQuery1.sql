@@ -1,4 +1,4 @@
-﻿ALTER DATABASE QuanLyNganHangTrucTuyen 
+﻿﻿ALTER DATABASE QuanLyNganHangTrucTuyen 
 SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
 DROP DATABASE QuanLyNganHangTrucTuyen;
 GO
@@ -90,6 +90,3 @@ CREATE TABLE ThanhToan (
     FOREIGN KEY (MaHoaDon) REFERENCES HoaDon(MaHoaDon)
 );
 GO
-
-
-

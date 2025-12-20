@@ -23,13 +23,6 @@ namespace quanlynganhangtructuyen.Controllers
             _config = config;
         }
 
-        /// <summary>
-        /// Đăng ký tài khoản mới cho khách hàng:
-        /// - Mã hóa mật khẩu
-        /// - Tạo người dùng (vai trò = CUSTOMER)
-        /// - Tạo khách hàng (Trang thái KYC = PENDING)
-        /// - Tạo tài khoản ngân hàng với số dư ban đầu = 0
-        /// </summary>
         [HttpPost("register")]
         public async Task<IActionResult> DangKy([FromBody] DangKyRequest req)
         {
@@ -103,27 +96,71 @@ namespace quanlynganhangtructuyen.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> DangNhap([FromBody] DangNhapRequest req)
         {
+            // 1. Kiểm tra dữ liệu gửi lên
             if (string.IsNullOrWhiteSpace(req.TenDangNhap) || string.IsNullOrWhiteSpace(req.MatKhau))
-                return BadRequest(new { thongBao = "Thiếu tên đăng nhập hoặc mật khẩu." });
+            {
+                return BadRequest(new { thongBao = "Vui lòng nhập tên đăng nhập và mật khẩu." });
+            }
 
+            // 2. Tìm User trong Database
             var nguoiDung = await _db.NguoiDung.FirstOrDefaultAsync(x => x.TenDangNhap == req.TenDangNhap);
-            if (nguoiDung == null)
-                return Unauthorized(new { thongBao = "Sai tên đăng nhập hoặc mật khẩu." });
 
+            // Nếu không tìm thấy User
+            if (nguoiDung == null)
+            {
+                return Unauthorized(new { thongBao = "Tài khoản hoặc mật khẩu không chính xác." });
+            }
+
+            // 3. Kiểm tra Mật khẩu (Dùng BCrypt để so sánh)
             bool dungMatKhau = BCrypt.Net.BCrypt.Verify(req.MatKhau, nguoiDung.MatKhauHash);
             if (!dungMatKhau)
-                return Unauthorized(new { thongBao = "Sai tên đăng nhập hoặc mật khẩu." });
+            {
+                return Unauthorized(new { thongBao = "Tài khoản hoặc mật khẩu không chính xác." });
+            }
 
-            var khachHang = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == nguoiDung.MaNguoiDung);
-            string hoTen = khachHang?.HoTen ?? "";
+            // 4. Kiểm tra xem tài khoản có bị khóa không
+            if (nguoiDung.TrangThai != "ACTIVE")
+            {
+                return Unauthorized(new { thongBao = "Tài khoản này đã bị khóa. Vui lòng liên hệ ngân hàng." });
+            }
 
-            string token = TaoJwtToken(nguoiDung, hoTen);
+            // 5. Xử lý hiển thị Họ Tên (Logic phân quyền)
+            string hoTenHienThi = "";
 
+            if (nguoiDung.VaiTro == "CUSTOMER")
+            {
+                // Nếu là Khách -> Phải tìm tên trong bảng KhachHang
+                var khach = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == nguoiDung.MaNguoiDung);
+                if (khach == null)
+                {
+                    // Trường hợp lỗi dữ liệu: Có User nhưng chưa có thông tin Khách
+                    hoTenHienThi = "Khách hàng (Lỗi hồ sơ)";
+                }
+                else
+                {
+                    hoTenHienThi = khach.HoTen;
+                }
+            }
+            else if (nguoiDung.VaiTro == "ADMIN")
+            {
+                hoTenHienThi = "Quản Trị Viên (Admin)";
+            }
+            else if (nguoiDung.VaiTro == "STAFF")
+            {
+                hoTenHienThi = "Giao Dịch Viên";
+            }
+
+            // 6. Tạo Token
+            string token = TaoJwtToken(nguoiDung, hoTenHienThi);
+
+            // 7. Trả về kết quả
             return Ok(new
             {
-                token,
+                message = "Đăng nhập thành công",
+                token = token,
                 role = nguoiDung.VaiTro,
-                fullName = hoTen
+                fullName = hoTenHienThi,
+                accountId = nguoiDung.MaNguoiDung
             });
         }
 
