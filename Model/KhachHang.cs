@@ -16,6 +16,7 @@ namespace Model
         public string? SoDienThoai { get; set; }
         public string? SoCCCD { get; set; }
         public string TrangThaiKYC { get; set; } = "PENDING";
+
     }
 }
 
