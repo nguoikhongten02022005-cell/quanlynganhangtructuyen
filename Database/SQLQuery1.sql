@@ -90,3 +90,6 @@ CREATE TABLE ThanhToan (
     FOREIGN KEY (MaHoaDon) REFERENCES HoaDon(MaHoaDon)
 );
 GO
+
+
+

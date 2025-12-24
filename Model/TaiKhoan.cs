@@ -14,3 +14,5 @@ namespace Model
         public decimal SoDu { get; set; } = 0;
         public string TrangThai { get; set; } = "ACTIVE";
     }
+
+}
