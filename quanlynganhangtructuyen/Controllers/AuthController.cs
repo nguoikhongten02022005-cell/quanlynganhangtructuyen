@@ -1,4 +1,4 @@
-﻿using DAL;
+using DAL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,37 +23,25 @@ namespace quanlynganhangtructuyen.Controllers
             _config = config;
         }
 
-        /// <summary>
-        /// Đăng ký tài khoản mới cho khách hàng:
-        /// - Hash mật khẩu
-        /// - Tạo NguoiDung (role=CUSTOMER)
-        /// - Tạo KhachHang (KYC=PENDING)
-        /// - (Khuyến nghị) Tạo TaiKhoan số dư 0
-        /// </summary>
         [HttpPost("register")]
         public async Task<IActionResult> DangKy([FromBody] DangKyRequest req)
         {
-            // 1) Kiểm tra dữ liệu đầu vào tối thiểu
             if (string.IsNullOrWhiteSpace(req.TenDangNhap) ||
                 string.IsNullOrWhiteSpace(req.MatKhau) ||
                 string.IsNullOrWhiteSpace(req.HoTen))
             {
-                return BadRequest(new { thongBao = "Thiếu TenDangNhap/MatKhau/HoTen." });
+                return BadRequest(new { thongBao = "Thiếu thông tin tên đăng nhập, mật khẩu hoặc họ tên." });
             }
 
-            // 2) Kiểm tra trùng tên đăng nhập
             bool daTonTai = await _db.NguoiDung.AnyAsync(x => x.TenDangNhap == req.TenDangNhap);
             if (daTonTai)
                 return Conflict(new { thongBao = "Tên đăng nhập đã tồn tại." });
 
-            // 3) Hash mật khẩu
             string matKhauHash = BCrypt.Net.BCrypt.HashPassword(req.MatKhau);
 
-            // 4) Dùng transaction để tạo đồng bộ (NguoiDung + KhachHang + TaiKhoan)
             await using var tx = await _db.Database.BeginTransactionAsync();
             try
             {
-                // 4.1) Tạo người dùng
                 var nguoiDung = new NguoiDung
                 {
                     TenDangNhap = req.TenDangNhap,
@@ -62,9 +50,8 @@ namespace quanlynganhangtructuyen.Controllers
                     NgayTao = DateTime.Now
                 };
                 _db.NguoiDung.Add(nguoiDung);
-                await _db.SaveChangesAsync(); // lấy MaNguoiDung
+                await _db.SaveChangesAsync();
 
-                // 4.2) Tạo khách hàng (TrangThaiKYC mặc định "PENDING" theo model)
                 var khachHang = new KhachHang
                 {
                     MaNguoiDung = nguoiDung.MaNguoiDung,
@@ -73,9 +60,8 @@ namespace quanlynganhangtructuyen.Controllers
                     SoDienThoai = req.SoDienThoai
                 };
                 _db.KhachHang.Add(khachHang);
-                await _db.SaveChangesAsync(); // lấy MaKhachHang
+                await _db.SaveChangesAsync();
 
-                // 4.3) Tạo tài khoản ngân hàng số dư 0 (nếu bạn đã có entity + DbSet TaiKhoan)
                 var taiKhoan = new TaiKhoan
                 {
                     MaKhachHang = khachHang.MaKhachHang,
@@ -90,7 +76,7 @@ namespace quanlynganhangtructuyen.Controllers
 
                 return Ok(new
                 {
-                    thongBao = "Đăng ký thành công.",
+                    thongBao = "Đăng ký tài khoản thành công.",
                     maNguoiDung = nguoiDung.MaNguoiDung,
                     maKhachHang = khachHang.MaKhachHang,
                     soTaiKhoan = taiKhoan.SoTaiKhoan,
@@ -100,49 +86,93 @@ namespace quanlynganhangtructuyen.Controllers
             catch
             {
                 await tx.RollbackAsync();
-                return StatusCode(500, new { thongBao = "Lỗi hệ thống khi đăng ký." });
+                return StatusCode(500, new { thongBao = "Lỗi hệ thống khi đăng ký tài khoản." });
             }
         }
 
         /// <summary>
-        /// Đăng nhập hệ thống -> trả JWT + role + họ tên
+        /// Đăng nhập và trả về JWT token + role + họ tên
         /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> DangNhap([FromBody] DangNhapRequest req)
         {
+            // 1. Kiểm tra dữ liệu gửi lên
             if (string.IsNullOrWhiteSpace(req.TenDangNhap) || string.IsNullOrWhiteSpace(req.MatKhau))
-                return BadRequest(new { thongBao = "Thiếu TenDangNhap/MatKhau." });
+            {
+                return BadRequest(new { thongBao = "Vui lòng nhập tên đăng nhập và mật khẩu." });
+            }
 
+            // 2. Tìm User trong Database
             var nguoiDung = await _db.NguoiDung.FirstOrDefaultAsync(x => x.TenDangNhap == req.TenDangNhap);
-            if (nguoiDung == null)
-                return Unauthorized(new { thongBao = "Sai tên đăng nhập hoặc mật khẩu." });
 
+            // Nếu không tìm thấy User
+            if (nguoiDung == null)
+            {
+                return Unauthorized(new { thongBao = "Tài khoản hoặc mật khẩu không chính xác." });
+            }
+
+            // 3. Kiểm tra Mật khẩu (Dùng BCrypt để so sánh)
             bool dungMatKhau = BCrypt.Net.BCrypt.Verify(req.MatKhau, nguoiDung.MatKhauHash);
             if (!dungMatKhau)
-                return Unauthorized(new { thongBao = "Sai tên đăng nhập hoặc mật khẩu." });
+            {
+                return Unauthorized(new { thongBao = "Tài khoản hoặc mật khẩu không chính xác." });
+            }
 
-            var khachHang = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == nguoiDung.MaNguoiDung);
-            string hoTen = khachHang?.HoTen ?? "";
+            // 4. Kiểm tra xem tài khoản có bị khóa không
+            if (nguoiDung.TrangThai != "ACTIVE")
+            {
+                return Unauthorized(new { thongBao = "Tài khoản này đã bị khóa. Vui lòng liên hệ ngân hàng." });
+            }
 
-            string token = TaoJwtToken(nguoiDung, hoTen);
+            // 5. Xử lý hiển thị Họ Tên (Logic phân quyền)
+            string hoTenHienThi = "";
 
+            if (nguoiDung.VaiTro == "CUSTOMER")
+            {
+                // Nếu là Khách -> Phải tìm tên trong bảng KhachHang
+                var khach = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == nguoiDung.MaNguoiDung);
+                if (khach == null)
+                {
+                    // Trường hợp lỗi dữ liệu: Có User nhưng chưa có thông tin Khách
+                    hoTenHienThi = "Khách hàng (Lỗi hồ sơ)";
+                }
+                else
+                {
+                    hoTenHienThi = khach.HoTen;
+                }
+            }
+            else if (nguoiDung.VaiTro == "ADMIN")
+            {
+                hoTenHienThi = "Quản Trị Viên (Admin)";
+            }
+            else if (nguoiDung.VaiTro == "STAFF")
+            {
+                hoTenHienThi = "Giao Dịch Viên";
+            }
+
+            // 6. Tạo Token
+            string token = TaoJwtToken(nguoiDung, hoTenHienThi);
+
+            // 7. Trả về kết quả
             return Ok(new
             {
-                token,
+                message = "Đăng nhập thành công",
+                token = token,
                 role = nguoiDung.VaiTro,
-                fullName = hoTen
+                fullName = hoTenHienThi,
+                accountId = nguoiDung.MaNguoiDung
             });
         }
 
         /// <summary>
-        /// Đổi mật khẩu (người đang đăng nhập)
+        /// Đổi mật khẩu (dành cho người đã đăng nhập)
         /// </summary>
         [Authorize]
         [HttpPost("change-password")]
         public async Task<IActionResult> DoiMatKhau([FromBody] DoiMatKhauRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.MatKhauCu) || string.IsNullOrWhiteSpace(req.MatKhauMoi))
-                return BadRequest(new { thongBao = "Thiếu MatKhauCu/MatKhauMoi." });
+                return BadRequest(new { thongBao = "Thiếu mật khẩu cũ hoặc mật khẩu mới." });
 
             string? userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out int maNguoiDung))
@@ -168,7 +198,6 @@ namespace quanlynganhangtructuyen.Controllers
         {
             while (true)
             {
-                // 14 số (bạn có thể đổi)
                 string so = "10" + Random.Shared.NextInt64(100000000000, 999999999999).ToString();
 
                 bool tonTai = await _db.TaiKhoan.AnyAsync(x => x.SoTaiKhoan == so);
@@ -178,12 +207,10 @@ namespace quanlynganhangtructuyen.Controllers
 
         private string TaoJwtToken(NguoiDung nguoiDung, string hoTen)
         {
-            // Bạn cần có trong appsettings.json:
-            // "Jwt": { "Key": "...", "Issuer": "...", "Audience": "...", "ExpMinutes": 60 }
             var key = _config["Jwt:Key"] ?? throw new Exception("Thiếu cấu hình Jwt:Key");
             var issuer = _config["Jwt:Issuer"];
             var audience = _config["Jwt:Audience"];
-            int expMinutes = int.TryParse(_config["Jwt:ExpMinutes"], out var m) ? m : 60;
+            int expMinutes = int.TryParse(_config["Jwt:ExpiresMinutes"], out var m) ? m : 60;
 
             var claims = new List<Claim>
             {
