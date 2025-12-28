@@ -83,10 +83,12 @@ namespace quanlynganhangtructuyen.Controllers
                     trangThaiKyc = khachHang.TrangThaiKYC
                 });
             }
-            catch
+            catch (Exception ex)
             {
                 await tx.RollbackAsync();
-                return StatusCode(500, new { thongBao = "Lỗi hệ thống khi đăng ký tài khoản." });
+                var root = ex;
+                while (root.InnerException != null) root = root.InnerException;
+                return StatusCode(500, new { thongBao = "Lỗi hệ thống khi đăng ký tài khoản.", loi = root.Message });
             }
         }
 

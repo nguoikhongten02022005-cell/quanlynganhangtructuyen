@@ -24,3 +24,9 @@ GO
 SELECT TenDangNhap, VaiTro, MatKhauHash
 FROM NguoiDung
 WHERE TenDangNhap = 'staff03';
+
+--Xoá UNIQUE constraint trên SoCCCD
+ALTER TABLE dbo.KhachHang
+DROP CONSTRAINT [UQ__KhachHan__8A547D3AA839022B];
+GO
+

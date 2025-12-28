@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCB Digibank - Đăng ký</title>
+    <link rel="stylesheet" href="../css/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background"></div>
+
+    <!-- Thông báo -->
+    <div class="toast" id="toast">
+        <span class="toast-icon"><i class="fas fa-check-circle"></i></span>
+        <span class="toast-message" id="toastMessage">Thông báo</span>
+    </div>
+
+    <div class="auth-container">
+        <h1 class="title">VCB<span style="font-weight: normal;">Digibank</span></h1>
+        <p class="subtitle">Đăng ký tài khoản mới</p>
+
+        <!-- Form Đăng ký -->
+        <form id="registerForm" class="auth-form">
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="input-icon-left"><i class="fas fa-user"></i></span>
+                    <input type="text" placeholder="Tên đăng nhập" id="regUsername" required minlength="4">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="input-icon-left"><i class="fas fa-lock"></i></span>
+                    <input type="password" placeholder="Mật khẩu" id="regPassword" required minlength="6">
+                    <span class="input-icon" onclick="togglePassword('regPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="input-icon-left"><i class="fas fa-lock"></i></span>
+                    <input type="password" placeholder="Xác nhận mật khẩu" id="regConfirmPassword" required>
+                    <span class="input-icon" onclick="togglePassword('regConfirmPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="input-icon-left"><i class="fas fa-user-circle"></i></span>
+                    <input type="text" placeholder="Họ và tên" id="regFullName" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="input-icon-left"><i class="fas fa-envelope"></i></span>
+                    <input type="email" placeholder="Email" id="regEmail">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="input-icon-left"><i class="fas fa-phone"></i></span>
+                    <input type="tel" placeholder="Số điện thoại" id="regPhone">
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn register-btn">
+                <i class="fas fa-user-plus"></i> Đăng ký tài khoản
+            </button>
+
+            <div class="switch-form">
+                Đã có tài khoản? <a href="index.html">Đăng nhập</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="../js/index.js"></script>
+</body>
+</html>
