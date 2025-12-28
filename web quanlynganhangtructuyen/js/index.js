@@ -3,7 +3,7 @@
 // =============================================
 
 // API Base URL (sẽ cấu hình sau khi kết nối API)
-const API_BASE_URL = 'https://localhost:7000/api';
+const API_BASE_URL = 'https://localhost:7079/api';
 
 // =============================================
 // TOAST NOTIFICATION
@@ -94,15 +94,11 @@ function handleLogin(e) {
         matKhau: password
     };
     
-    // Demo - sẽ thay bằng API call sau
-    setTimeout(() => {
-        submitBtn.classList.remove('loading');
-        showToast('Đăng nhập thành công!', 'success');
-        console.log('Login data:', loginData);
-        
-        // TODO: Gọi API thực tế
-        // callLoginAPI(loginData);
-    }, 1500);
+    // Gọi API đăng nhập
+    callLoginAPI(loginData)
+        .finally(() => {
+            submitBtn.classList.remove('loading');
+        });
 }
 
 // =============================================
@@ -166,20 +162,11 @@ function handleRegister(e) {
         soDienThoai: phone
     };
     
-    // Demo - sẽ thay bằng API call sau
-    setTimeout(() => {
-        submitBtn.classList.remove('loading');
-        showToast('Đăng ký tài khoản thành công!', 'success');
-        console.log('Register data:', registerData);
-        
-        // Chuyển sang trang đăng nhập
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 1500);
-        
-        // TODO: Gọi API thực tế
-        // callRegisterAPI(registerData);
-    }, 1500);
+    // Gọi API đăng ký
+    callRegisterAPI(registerData)
+        .finally(() => {
+            submitBtn.classList.remove('loading');
+        });
 }
 
 // =============================================

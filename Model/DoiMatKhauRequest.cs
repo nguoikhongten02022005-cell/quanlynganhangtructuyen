@@ -10,6 +10,5 @@ namespace Model
     {
         public string MatKhauCu { get; set; } = "";
         public string MatKhauMoi { get; set; } = "";
-        PUB
     }
 }
