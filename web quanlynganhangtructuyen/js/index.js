@@ -1,6 +1,3 @@
-// =============================================
-// VCB Digibank - Authentication JavaScript
-// =============================================
 
 // API Base URL (sẽ cấu hình sau khi kết nối API)
 const API_BASE_URL = 'https://localhost:7079/api';
@@ -172,6 +169,36 @@ function handleRegister(e) {
 // =============================================
 // API FUNCTIONS (Chuẩn bị sẵn)
 // =============================================
+
+async function callChangePasswordAPI(data) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showToast(result.thongBao || 'Đổi mật khẩu thành công!', 'success');
+            
+            // Quay lại trang đăng nhập sau 2 giây
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        } else {
+            showToast(result.thongBao || 'Đổi mật khẩu thất bại', 'error');
+        }
+    } catch (error) {
+        console.error('Change password error:', error);
+        showToast('Lỗi kết nối server', 'error');
+    }
+}
+
 async function callLoginAPI(data) {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
