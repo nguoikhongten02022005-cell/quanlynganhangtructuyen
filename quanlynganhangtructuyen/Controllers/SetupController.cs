@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Model;
+using Model.Requests;
 
 namespace quanlynganhangtructuyen.Controllers
 {
@@ -20,12 +21,6 @@ namespace quanlynganhangtructuyen.Controllers
             _env = env;
         }
 
-        public class CreateSystemUserRequest
-        {
-            public string Username { get; set; } = "";
-            public string Password { get; set; } = "";
-            public string Role { get; set; } = "STAFF"; // ADMIN hoặc STAFF
-        }
 
         [HttpPost("create-system-user")]
         public async Task<IActionResult> CreateSystemUser(
@@ -44,7 +39,7 @@ namespace quanlynganhangtructuyen.Controllers
                 return Unauthorized(new { thongBao = "Setup key không đúng." });
 
             // Validate input
-            var username = (req.Username ?? "").Trim();
+            var username = (req.UserName ?? "").Trim();
             var password = req.Password ?? "";
             var role = (req.Role ?? "").Trim().ToUpperInvariant();
 

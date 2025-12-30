@@ -1,31 +1,31 @@
-ALTER TABLE NguoiDung 
+﻿ALTER TABLE NguoiDung 
 ADD TrangThai VARCHAR(20) DEFAULT 'ACTIVE';
 GO
-
 
 UPDATE NguoiDung SET TrangThai = 'ACTIVE' WHERE TrangThai IS NULL;
 GO
 
-SELECT TenDangNhap, MatKhauHash 
-FROM NguoiDung 
-WHERE TenDangNhap = 'test_admin';
-
-UPDATE NguoiDung
-SET MatKhauHash = '$2a$11$/8WAIyUDklt3BPwN39nCu.3Kij9bU2PnOz.D/4tLMfGIbEOpyorHO'
-WHERE TenDangNhap = 'admin';
-
-INSERT INTO NguoiDung (TenDangNhap, MatKhauHash, VaiTro, TrangThai, NgayTao)
-SELECT 'admin', MatKhauHash, 'ADMIN', 'ACTIVE', GETDATE()
+-- xem tài khoản ADMIN / STAFF
+SELECT 
+    MaNguoiDung,
+    TenDangNhap,
+    MatKhauHash,
+    VaiTro,
+    TrangThai,
+    NgayTao
 FROM NguoiDung
-WHERE TenDangNhap = 'test_admin';
-GO
+WHERE VaiTro IN ('ADMIN', 'STAFF');
+
+DELETE FROM NguoiDung
+WHERE TenDangNhap = 'admin1';
+
+DBCC CHECKIDENT ('NguoiDung', RESEED, 0);
+
+DELETE FROM NguoiDung WHERE TenDangNhap = 'admin1';
 
 
-SELECT TenDangNhap, VaiTro, MatKhauHash
-FROM NguoiDung
-WHERE TenDangNhap = 'staff03';
 
---Xo� UNIQUE constraint tr�n SoCCCD
+--Xoá UNIQUE constraint trên SoCCCD
 ALTER TABLE dbo.KhachHang
 DROP CONSTRAINT [UQ__KhachHan__8A547D3AA839022B];
 GO
