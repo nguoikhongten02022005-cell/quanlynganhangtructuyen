@@ -1,4 +1,4 @@
-﻿using DAL;
+using DAL;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
@@ -66,6 +66,36 @@ namespace quanlynganhangtructuyen.Controllers
                 kycStatus = khach.TrangThaiKYC,
                 reason = req.Reason // hiện DB chưa có cột để lưu nên chỉ trả về cho bạn thấy
             });
+        }
+
+        // GET /api/admin/users
+        [HttpGet("users")]
+        public async Task<IActionResult> GetUsers([FromQuery] string? role, [FromQuery] string? status)
+        {
+            var query = _db.NguoiDung.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrEmpty(role))
+            {
+                query = query.Where(u => u.VaiTro == role.ToUpperInvariant());
+            }
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(u => u.TrangThai == status.ToUpperInvariant());
+            }
+
+            var users = await query
+                .Select(u => new
+                {
+                    userId = u.MaNguoiDung,
+                    username = u.TenDangNhap,
+                    role = u.VaiTro,
+                    status = u.TrangThai,
+                    createdAt = u.NgayTao
+                })
+                .ToListAsync();
+
+            return Ok(new { total = users.Count, users });
         }
 
     }
