@@ -1,7 +1,6 @@
-﻿using DAL;
+using BLL.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Model.Requests;
 using System.Security.Claims;
 
@@ -12,30 +11,38 @@ namespace quanlynganhangtructuyen.Controllers
     [Authorize(Roles = "CUSTOMER")]
     public class CustomerController : ControllerBase
     {
-        private readonly NganHangDAL _db;
-        public CustomerController(NganHangDAL db) { _db = db; }
+        private readonly IKhachHangService _dichVuKhachHang; // Tên biến tiếng Việt
+
+        public CustomerController(IKhachHangService dichVuKhachHang)
+        {
+            _dichVuKhachHang = dichVuKhachHang;
+        }
 
         // POST /api/customer/kyc
         [HttpPost("kyc")]
-        public async Task<IActionResult> SubmitKyc([FromBody] KycSubmitRequest req)
+        public async Task<IActionResult> GuiYeuCauKyc([FromBody] KycSubmitRequest yeuCau)
         {
-            var cccd = (req.CccdNumber ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(cccd))
+            // 1. Lấy dữ liệu đầu vào
+            var soCCCD = (yeuCau.CccdNumber ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(soCCCD))
                 return BadRequest(new { thongBao = "Vui lòng nhập số CCCD." });
 
+            // 2. Lấy ID người dùng từ Token
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out var maNguoiDung))
                 return Unauthorized(new { thongBao = "Token không hợp lệ." });
 
-            var khach = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
-            if (khach == null)
-                return NotFound(new { thongBao = "Không tìm thấy hồ sơ khách hàng." });
-
-            khach.SoCCCD = cccd;
-            khach.TrangThaiKYC = "PENDING";
-            await _db.SaveChangesAsync();
-
-            return Ok(new { thongBao = "Đã gửi KYC, vui lòng chờ duyệt.", kycStatus = khach.TrangThaiKYC });
+            // 3. Gọi Service để xử lý
+            try
+            {
+                await _dichVuKhachHang.GuiYeuCauKycAsync(maNguoiDung, soCCCD);
+                return Ok(new { thongBao = "Đã gửi yêu cầu KYC thành công, vui lòng chờ duyệt." });
+            }
+            catch (Exception ex)
+            {
+                // Nếu có lỗi (ví dụ không tìm thấy khách hàng), trả về lỗi 400 hoặc 404
+                return BadRequest(new { thongBao = ex.Message });
+            }
         }
     }
 }

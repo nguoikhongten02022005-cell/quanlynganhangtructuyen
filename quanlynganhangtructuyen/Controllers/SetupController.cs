@@ -1,8 +1,7 @@
-﻿using DAL;
+using DAL;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Model;
 using Model.Requests;
+using BLL.Services; // Thêm namespace BLL
 
 namespace quanlynganhangtructuyen.Controllers
 {
@@ -10,17 +9,16 @@ namespace quanlynganhangtructuyen.Controllers
     [Route("api/setup")]
     public class SetupController : ControllerBase
     {
-        private readonly NganHangDAL _db;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
+        private readonly IUserService _userService; // Sử dụng UserService thay vì DbContext trực tiếp
 
-        public SetupController(NganHangDAL db, IConfiguration config, IWebHostEnvironment env)
+        public SetupController(IConfiguration config, IWebHostEnvironment env, IUserService userService)
         {
-            _db = db;
             _config = config;
             _env = env;
+            _userService = userService;
         }
-
 
         [HttpPost("create-system-user")]
         public async Task<IActionResult> CreateSystemUser(
@@ -49,29 +47,23 @@ namespace quanlynganhangtructuyen.Controllers
             if (role != "ADMIN" && role != "STAFF")
                 return BadRequest(new { thongBao = "Role chỉ nhận ADMIN hoặc STAFF." });
 
-            // Không cho tạo trùng username
-            if (await _db.NguoiDung.AnyAsync(x => x.TenDangNhap == username))
-                return Conflict(new { thongBao = "Tên đăng nhập đã tồn tại." });
-
-            // Hash BCrypt rồi lưu DB (để login Verify được)
-            var user = new NguoiDung
+            try
             {
-                TenDangNhap = username,
-                MatKhauHash = BCrypt.Net.BCrypt.HashPassword(password),
-                VaiTro = role,
-                TrangThai = "ACTIVE",
-                NgayTao = DateTime.Now
-            };
+                // Gọi xuống BLL để xử lý logic
+                var user = await _userService.TaoNguoiDungHeThongAsync(username, password, role);
 
-            _db.NguoiDung.Add(user);
-            await _db.SaveChangesAsync();
-
-            return Ok(new
+                return Ok(new
+                {
+                    thongBao = "Tạo tài khoản hệ thống thành công.",
+                    maNguoiDung = user.MaNguoiDung,
+                    role = user.VaiTro
+                });
+            }
+            catch (Exception ex)
             {
-                thongBao = "Tạo tài khoản hệ thống thành công.",
-                maNguoiDung = user.MaNguoiDung,
-                role = user.VaiTro
-            });
+                // Nếu BLL ném lỗi (ví dụ trùng username), trả về lỗi 400 hoặc 409
+                return BadRequest(new { thongBao = ex.Message });
+            }
         }
     }
 }
