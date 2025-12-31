@@ -57,7 +57,8 @@ namespace quanlynganhangtructuyen.Controllers
                     MaNguoiDung = nguoiDung.MaNguoiDung,
                     HoTen = req.HoTen,
                     Email = req.Email,
-                    SoDienThoai = req.SoDienThoai
+                    SoDienThoai = req.SoDienThoai,
+                    TrangThaiKYC = "NONE"
                 };
                 _db.KhachHang.Add(khachHang);
                 await _db.SaveChangesAsync();
