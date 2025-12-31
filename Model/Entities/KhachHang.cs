@@ -15,7 +15,7 @@ namespace Model
         public string? Email { get; set; }
         public string? SoDienThoai { get; set; }
         public string? SoCCCD { get; set; }
-        public string TrangThaiKYC { get; set; } = "PENDING";
+        public string TrangThaiKYC { get; set; } = "NONE";
 
     }
 }
