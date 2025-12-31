@@ -21,7 +21,10 @@ WHERE TenDangNhap = 'admin1';
 
 DBCC CHECKIDENT ('NguoiDung', RESEED, 0);
 
-DELETE FROM NguoiDung WHERE TenDangNhap = 'admin1';
+--Sửa dữ liệu cũ trong DB (đã tạo nhầm PENDING)
+UPDATE KhachHang
+SET TrangThaiKYC = 'NONE'
+WHERE TrangThaiKYC = 'PENDING' AND SoCCCD IS NULL;
 
 
 

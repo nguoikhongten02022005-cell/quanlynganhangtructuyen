@@ -1,4 +1,5 @@
-﻿using DAL;
+using BLL.Services;
+using DAL;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -41,9 +42,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Nếu có BLL thì thêm:
-// builder.Services.AddScoped<KhachHangBusiness>();
-
+// Đăng ký các Service (BLL) vào hệ thống
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IKhachHangService, KhachHangService>();
+builder.Services.AddScoped<ITaiKhoanService, TaiKhoanService>();
 
 var app = builder.Build();
 

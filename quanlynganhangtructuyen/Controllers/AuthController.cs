@@ -1,9 +1,11 @@
+using BLL.Services;
 using DAL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Model;
+using Model.Requests;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -14,11 +16,13 @@ namespace quanlynganhangtructuyen.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
-        private readonly NganHangDAL _db;
+        private readonly IAuthService _authService;
+        private readonly NganHangDAL _db; // Vẫn cần để lấy tên khách hàng khi login (tạm thời)
         private readonly IConfiguration _config;
 
-        public AuthController(NganHangDAL db, IConfiguration config)
+        public AuthController(IAuthService authService, NganHangDAL db, IConfiguration config)
         {
+            _authService = authService;
             _db = db;
             _config = config;
         }
@@ -33,62 +37,17 @@ namespace quanlynganhangtructuyen.Controllers
                 return BadRequest(new { thongBao = "Thiếu thông tin tên đăng nhập, mật khẩu hoặc họ tên." });
             }
 
-            bool daTonTai = await _db.NguoiDung.AnyAsync(x => x.TenDangNhap == req.TenDangNhap);
-            if (daTonTai)
-                return Conflict(new { thongBao = "Tên đăng nhập đã tồn tại." });
-
-            string matKhauHash = BCrypt.Net.BCrypt.HashPassword(req.MatKhau);
-
-            await using var tx = await _db.Database.BeginTransactionAsync();
             try
             {
-                var nguoiDung = new NguoiDung
-                {
-                    TenDangNhap = req.TenDangNhap,
-                    MatKhauHash = matKhauHash,
-                    VaiTro = "CUSTOMER",
-                    NgayTao = DateTime.Now
-                };
-                _db.NguoiDung.Add(nguoiDung);
-                await _db.SaveChangesAsync();
-
-                var khachHang = new KhachHang
-                {
-                    MaNguoiDung = nguoiDung.MaNguoiDung,
-                    HoTen = req.HoTen,
-                    Email = req.Email,
-                    SoDienThoai = req.SoDienThoai
-                };
-                _db.KhachHang.Add(khachHang);
-                await _db.SaveChangesAsync();
-
-                var taiKhoan = new TaiKhoan
-                {
-                    MaKhachHang = khachHang.MaKhachHang,
-                    SoTaiKhoan = await TaoSoTaiKhoanAsync(),
-                    SoDu = 0,
-                    TrangThai = "ACTIVE"
-                };
-                _db.TaiKhoan.Add(taiKhoan);
-                await _db.SaveChangesAsync();
-
-                await tx.CommitAsync();
-
-                return Ok(new
-                {
-                    thongBao = "Đăng ký tài khoản thành công.",
-                    maNguoiDung = nguoiDung.MaNguoiDung,
-                    maKhachHang = khachHang.MaKhachHang,
-                    soTaiKhoan = taiKhoan.SoTaiKhoan,
-                    trangThaiKyc = khachHang.TrangThaiKYC
-                });
+                var result = await _authService.DangKyKhachHangAsync(req);
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                await tx.RollbackAsync();
-                var root = ex;
-                while (root.InnerException != null) root = root.InnerException;
-                return StatusCode(500, new { thongBao = "Lỗi hệ thống khi đăng ký tài khoản.", loi = root.Message });
+                if (ex.Message.Contains("tồn tại"))
+                    return Conflict(new { thongBao = ex.Message });
+
+                return StatusCode(500, new { thongBao = "Lỗi hệ thống.", loi = ex.Message });
             }
         }
 
@@ -98,72 +57,58 @@ namespace quanlynganhangtructuyen.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> DangNhap([FromBody] DangNhapRequest req)
         {
-            // 1. Kiểm tra dữ liệu gửi lên
             if (string.IsNullOrWhiteSpace(req.TenDangNhap) || string.IsNullOrWhiteSpace(req.MatKhau))
             {
                 return BadRequest(new { thongBao = "Vui lòng nhập tên đăng nhập và mật khẩu." });
             }
 
-            // 2. Tìm User trong Database
-            var nguoiDung = await _db.NguoiDung.FirstOrDefaultAsync(x => x.TenDangNhap == req.TenDangNhap);
-
-            // Nếu không tìm thấy User
-            if (nguoiDung == null)
+            try
             {
-                return Unauthorized(new { thongBao = "Tài khoản hoặc mật khẩu không chính xác." });
-            }
+                // Gọi Service để kiểm tra đăng nhập
+                var nguoiDung = await _authService.DangNhapAsync(req.TenDangNhap, req.MatKhau);
 
-            // 3. Kiểm tra Mật khẩu (Dùng BCrypt để so sánh)
-            bool dungMatKhau = BCrypt.Net.BCrypt.Verify(req.MatKhau, nguoiDung.MatKhauHash);
-            if (!dungMatKhau)
-            {
-                return Unauthorized(new { thongBao = "Tài khoản hoặc mật khẩu không chính xác." });
-            }
+                // Logic hiển thị tên (Phần này vẫn giữ ở Controller vì liên quan đến việc Build Token trả về Client)
+                string hoTenHienThi = "";
 
-            // 4. Kiểm tra xem tài khoản có bị khóa không
-            if (nguoiDung.TrangThai != "ACTIVE")
-            {
-                return Unauthorized(new { thongBao = "Tài khoản này đã bị khóa. Vui lòng liên hệ ngân hàng." });
-            }
-
-            // 5. Xử lý hiển thị Họ Tên (Logic phân quyền)
-            string hoTenHienThi = "";
-
-            if (nguoiDung.VaiTro == "CUSTOMER")
-            {
-                // Nếu là Khách -> Phải tìm tên trong bảng KhachHang
-                var khach = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == nguoiDung.MaNguoiDung);
-                if (khach == null)
+                if (nguoiDung.VaiTro == "CUSTOMER")
                 {
-                    // Trường hợp lỗi dữ liệu: Có User nhưng chưa có thông tin Khách
-                    hoTenHienThi = "Khách hàng (Lỗi hồ sơ)";
+                    // Nếu là Khách -> Phải tìm tên trong bảng KhachHang
+                    // Lưu ý: Có thể chuyển logic này vào Service nếu muốn triệt để hơn
+                    var khach = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == nguoiDung.MaNguoiDung);
+                    if (khach == null)
+                    {
+                        hoTenHienThi = "Khách hàng (Lỗi hồ sơ)";
+                    }
+                    else
+                    {
+                        hoTenHienThi = khach.HoTen;
+                    }
                 }
-                else
+                else if (nguoiDung.VaiTro == "ADMIN")
                 {
-                    hoTenHienThi = khach.HoTen;
+                    hoTenHienThi = "Quản Trị Viên (Admin)";
                 }
-            }
-            else if (nguoiDung.VaiTro == "ADMIN")
-            {
-                hoTenHienThi = "Quản Trị Viên (Admin)";
-            }
-            else if (nguoiDung.VaiTro == "STAFF")
-            {
-                hoTenHienThi = "Giao Dịch Viên";
-            }
+                else if (nguoiDung.VaiTro == "STAFF")
+                {
+                    hoTenHienThi = "Giao Dịch Viên";
+                }
 
-            // 6. Tạo Token
-            string token = TaoJwtToken(nguoiDung, hoTenHienThi);
+                // Tạo Token
+                string token = TaoJwtToken(nguoiDung, hoTenHienThi);
 
-            // 7. Trả về kết quả
-            return Ok(new
+                return Ok(new
+                {
+                    message = "Đăng nhập thành công",
+                    token = token,
+                    role = nguoiDung.VaiTro,
+                    fullName = hoTenHienThi,
+                    accountId = nguoiDung.MaNguoiDung
+                });
+            }
+            catch (Exception ex)
             {
-                message = "Đăng nhập thành công",
-                token = token,
-                role = nguoiDung.VaiTro,
-                fullName = hoTenHienThi,
-                accountId = nguoiDung.MaNguoiDung
-            });
+                return Unauthorized(new { thongBao = ex.Message });
+            }
         }
 
         /// <summary>
@@ -180,32 +125,18 @@ namespace quanlynganhangtructuyen.Controllers
             if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out int maNguoiDung))
                 return Unauthorized(new { thongBao = "Token không hợp lệ." });
 
-            var nguoiDung = await _db.NguoiDung.FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
-            if (nguoiDung == null)
-                return Unauthorized(new { thongBao = "Người dùng không tồn tại." });
-
-            bool dungMatKhauCu = BCrypt.Net.BCrypt.Verify(req.MatKhauCu, nguoiDung.MatKhauHash);
-            if (!dungMatKhauCu)
-                return BadRequest(new { thongBao = "Mật khẩu cũ không đúng." });
-
-            nguoiDung.MatKhauHash = BCrypt.Net.BCrypt.HashPassword(req.MatKhauMoi);
-            await _db.SaveChangesAsync();
-
-            return Ok(new { thongBao = "Đổi mật khẩu thành công." });
+            try
+            {
+                await _authService.DoiMatKhauAsync(maNguoiDung, req.MatKhauCu, req.MatKhauMoi);
+                return Ok(new { thongBao = "Đổi mật khẩu thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
         }
 
         // ===================== HÀM PHỤ =====================
-
-        private async Task<string> TaoSoTaiKhoanAsync()
-        {
-            while (true)
-            {
-                string so = "10" + Random.Shared.NextInt64(100000000000, 999999999999).ToString();
-
-                bool tonTai = await _db.TaiKhoan.AnyAsync(x => x.SoTaiKhoan == so);
-                if (!tonTai) return so;
-            }
-        }
 
         private string TaoJwtToken(NguoiDung nguoiDung, string hoTen)
         {
