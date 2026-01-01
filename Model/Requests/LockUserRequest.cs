@@ -1,9 +1,8 @@
-using System;
-
 namespace Model.Requests
 {
-    public class LockUserRequest
+    public class KhoaTaiKhoanRequest
     {
-        public bool IsLocked { get; set; }
+        // TRUE = Khóa (LOCKED), FALSE = Mở khóa (ACTIVE)
+        public bool Khoa { get; set; }
     }
 }

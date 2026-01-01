@@ -56,5 +56,26 @@ namespace quanlynganhangtructuyen.Controllers
             var ketQua = await _dichVuNguoiDung.GetUsersAsync(role, status);
             return Ok(ketQua);
         }
+
+        // PUT /api/admin/users/{id}/lock
+        [HttpPut("users/{id}/lock")]
+        public async Task<IActionResult> KhoaTaiKhoan(int id, [FromBody] KhoaTaiKhoanRequest yeuCau)
+        {
+            try
+            {
+                await _dichVuNguoiDung.KhoaMoKhoaTaiKhoanAsync(id, yeuCau.Khoa);
+
+                return Ok(new
+                {
+                    thongBao = yeuCau.Khoa ? "Đã khóa tài khoản thành công." : "Đã mở khóa tài khoản thành công.",
+                    maNguoiDung = id,
+                    trangThaiMoi = yeuCau.Khoa ? "LOCKED" : "ACTIVE"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
     }
 }

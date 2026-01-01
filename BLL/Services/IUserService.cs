@@ -9,5 +9,8 @@ namespace BLL.Services
 
         // Hàm tạo tài khoản Admin hoặc Staff
         Task<Model.NguoiDung> TaoNguoiDungHeThongAsync(string tenDangNhap, string matKhau, string vaiTro);
+
+        // Hàm khóa hoặc mở khóa tài khoản
+        Task KhoaMoKhoaTaiKhoanAsync(int maNguoiDung, bool khoa);
     }
 }
