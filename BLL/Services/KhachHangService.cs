@@ -18,34 +18,25 @@ namespace BLL.Services
             _db = db;
         }
 
-        // --- PHẦN DÀNH CHO KHÁCH HÀNG ---
-
         public async Task GuiYeuCauKycAsync(int maNguoiDung, string soCCCD)
         {
-            // 1. Tìm thông tin khách hàng dựa trên mã người dùng
             var khachHang = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
 
-            // 2. Kiểm tra xem có tìm thấy không
             if (khachHang == null)
             {
                 throw new Exception("Không tìm thấy hồ sơ khách hàng.");
             }
 
-            // 3. Cập nhật thông tin CCCD và chuyển trạng thái
             khachHang.SoCCCD = soCCCD;
-            khachHang.TrangThaiKYC = "PENDING"; // Chờ duyệt
+            khachHang.TrangThaiKYC = "PENDING";
 
-            // 4. Lưu vào cơ sở dữ liệu
             await _db.SaveChangesAsync();
         }
 
-        // --- PHẦN DÀNH CHO ADMIN / NHÂN VIÊN ---
-
         public async Task<object> LayDanhSachChoDuyetAsync()
         {
-            // Lấy tất cả khách hàng có trạng thái là PENDING (Chờ duyệt)
             var danhSach = await _db.KhachHang
-                .AsNoTracking() // Không cần theo dõi thay đổi (tối ưu tốc độ)
+                .AsNoTracking()
                 .Where(k => k.TrangThaiKYC == "PENDING")
                 .Select(k => new
                 {
@@ -61,43 +52,71 @@ namespace BLL.Services
             return new { tongSo = danhSach.Count, danhSach = danhSach };
         }
 
-        public async Task DuyetYeuCauKycAsync(int maKhachHang, string trangThaiMoi, string lyDo)
+        public async Task DuyetYeuCauKycAsync(int maKhachHang, string trangThaiMoi, string? lyDo)
         {
-            // 1. Chuẩn hóa trạng thái (chữ hoa)
             trangThaiMoi = (trangThaiMoi ?? "").Trim().ToUpperInvariant();
 
-            // 2. Kiểm tra trạng thái hợp lệ
             if (trangThaiMoi != "ACTIVE" && trangThaiMoi != "REJECT")
             {
-                throw new Exception("Trạng thái chỉ nhận ACTIVE (Duyệt) hoặc REJECT (Từ chối).");
+                throw new Exception("Trạng thái chỉ nhận ACTIVE hoặc REJECT.");
             }
 
-            // 3. Tìm khách hàng trong Database
             var khachHang = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaKhachHang == maKhachHang);
             if (khachHang == null)
             {
                 throw new Exception("Không tìm thấy khách hàng.");
             }
 
-            // 4. Chỉ được duyệt khi đang ở trạng thái PENDING (Chờ duyệt)
             if (khachHang.TrangThaiKYC != "PENDING")
             {
                 throw new Exception($"Không thể duyệt vì trạng thái hiện tại là {khachHang.TrangThaiKYC}.");
             }
 
-            // 5. Nếu Duyệt (ACTIVE) thì bắt buộc phải có số CCCD
             if (trangThaiMoi == "ACTIVE" && string.IsNullOrWhiteSpace(khachHang.SoCCCD))
             {
                 throw new Exception("Khách chưa nộp CCCD, không thể duyệt.");
             }
 
-            // 6. Cập nhật trạng thái
             khachHang.TrangThaiKYC = trangThaiMoi;
-
-            // (Nếu muốn lưu lý do từ chối thì cần thêm cột vào Database, tạm thời bỏ qua)
-
-            // 7. Lưu thay đổi
             await _db.SaveChangesAsync();
+        }
+
+        public async Task<KhachHang> TraCuuTheoSoTaiKhoanAsync(string soTaiKhoan)
+        {
+            var taiKhoan = await _db.Set<TaiKhoan>()
+                .FirstOrDefaultAsync(tk => tk.SoTaiKhoan == soTaiKhoan);
+
+            if (taiKhoan == null)
+            {
+                return null;
+            }
+
+            var khachHang = await _db.KhachHang
+                .FirstOrDefaultAsync(kh => kh.MaKhachHang == taiKhoan.MaKhachHang);
+
+            return khachHang;
+        }
+
+        public async Task<object> LayThongTinHoSoAsync(int maNguoiDung)
+        {
+            var khachHang = await _db.KhachHang
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
+
+            if (khachHang == null)
+            {
+                throw new Exception("Không tìm thấy hồ sơ khách hàng.");
+            }
+
+            return new
+            {
+                hoTen = khachHang.HoTen,
+                email = khachHang.Email,
+                soDienThoai = khachHang.SoDienThoai,
+                soCCCD = khachHang.SoCCCD,
+                trangThaiKYC = khachHang.TrangThaiKYC,
+                ngayTao = khachHang.NgayTao
+            };
         }
     }
 }

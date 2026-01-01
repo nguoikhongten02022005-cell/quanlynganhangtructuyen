@@ -44,5 +44,25 @@ namespace quanlynganhangtructuyen.Controllers
                 return BadRequest(new { thongBao = ex.Message });
             }
         }
+
+        // GET /api/customer/profile
+        [HttpGet("profile")]
+        public async Task<IActionResult> LayThongTinHoSo()
+        {
+            // Lấy ID người dùng từ Token
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var maNguoiDung))
+                return Unauthorized(new { thongBao = "Token không hợp lệ." });
+
+            try
+            {
+                var thongTinHoSo = await _dichVuKhachHang.LayThongTinHoSoAsync(maNguoiDung);
+                return Ok(thongTinHoSo);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
     }
 }
