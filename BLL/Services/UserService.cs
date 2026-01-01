@@ -72,5 +72,33 @@ namespace BLL.Services
 
             return nguoiDungMoi;
         }
+
+        public async Task KhoaMoKhoaTaiKhoanAsync(int maNguoiDung, bool khoa)
+        {
+            // 1. Tìm người dùng
+            var nguoiDung = await _db.NguoiDung.FirstOrDefaultAsync(u => u.MaNguoiDung == maNguoiDung);
+
+            // 2. Kiểm tra tồn tại
+            if (nguoiDung == null)
+            {
+                throw new Exception("Người dùng không tồn tại.");
+            }
+
+            // 3. Không cho phép khóa chính mình hoặc khóa Admin khác nếu không đủ quyền (Logic đơn giản hóa: Admin nào cũng khóa được)
+            // Tuy nhiên, nên chặn khóa Admin chính (ví dụ ID = 1) nếu cần thiết.
+
+            // 4. Cập nhật trạng thái
+            if (khoa)
+            {
+                nguoiDung.TrangThai = "LOCKED";
+            }
+            else
+            {
+                nguoiDung.TrangThai = "ACTIVE";
+            }
+
+            // 5. Lưu thay đổi
+            await _db.SaveChangesAsync();
+        }
     }
 }
