@@ -12,42 +12,18 @@ namespace quanlynganhangtructuyen.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IUserService _dichVuNguoiDung;
-        private readonly IKhachHangService _dichVuKhachHang;
 
-        public AdminController(IUserService dichVuNguoiDung, IKhachHangService dichVuKhachHang)
+        public AdminController(IUserService dichVuNguoiDung)
         {
             _dichVuNguoiDung = dichVuNguoiDung;
-            _dichVuKhachHang = dichVuKhachHang;
         }
 
+        // ==================== PHẦN KYC - NGƯỜI KHÁC LÀM ====================
         // GET /api/admin/kyc-pending
-        [HttpGet("kyc-pending")]
-        public async Task<IActionResult> LayDanhSachChoDuyet()
-        {
-            var ketQua = await _dichVuKhachHang.LayDanhSachChoDuyetAsync();
-            return Ok(ketQua);
-        }
-
         // POST /api/admin/kyc-approve
-        [HttpPost("kyc-approve")]
-        public async Task<IActionResult> DuyetKyc([FromBody] KycApproveRequest yeuCau)
-        {
-            try
-            {
-                await _dichVuKhachHang.DuyetYeuCauKycAsync(yeuCau.CustomerId, yeuCau.Status, yeuCau.Reason);
-
-                return Ok(new
-                {
-                    thongBao = yeuCau.Status == "ACTIVE" ? "Đã duyệt KYC." : "Đã từ chối KYC.",
-                    maKhachHang = yeuCau.CustomerId,
-                    trangThaiMoi = yeuCau.Status
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { thongBao = ex.Message });
-            }
-        }
+        // Các API này sẽ được người làm phần B (CustomerController) bổ sung sau
+        // khi họ tạo IKhachHangService và KhachHangService
+        // ===================================================================
 
         // GET /api/admin/users
         [HttpGet("users")]
@@ -77,5 +53,8 @@ namespace quanlynganhangtructuyen.Controllers
                 return BadRequest(new { thongBao = ex.Message });
             }
         }
+
+        // GET /api/admin/dashboard - Báo cáo tổng quan (tối giản)
+        // TODO: Sẽ bổ sung sau khi có đầy đủ dữ liệu từ các phần khác
     }
 }

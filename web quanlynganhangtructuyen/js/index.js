@@ -1,278 +1,333 @@
-
-// API Base URL (sẽ cấu hình sau khi kết nối API)
+// =============================================
+// CAU HINH API
+// =============================================
 const API_BASE_URL = 'https://localhost:7079/api';
 
 // =============================================
-// TOAST NOTIFICATION
+// THONG BAO TOAST
 // =============================================
-function showToast(message, type = 'success') {
+function showToast(noiDung, loai = 'success') {
     const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toastMessage');
-    const toastIcon = toast.querySelector('.toast-icon i');
-    
+    const noiDungToast = document.getElementById('toastMessage');
+    const iconToast = toast.querySelector('.toast-icon i');
+
+    // Xoa cac class cu
     toast.classList.remove('show', 'error', 'warning');
-    
-    if (type === 'error') {
+
+    // Thiet lap loai thong bao
+    if (loai === 'error') {
         toast.classList.add('error');
-        toastIcon.className = 'fas fa-times-circle';
-    } else if (type === 'warning') {
+        iconToast.className = 'fas fa-times-circle';
+    } else if (loai === 'warning') {
         toast.classList.add('warning');
-        toastIcon.className = 'fas fa-exclamation-triangle';
+        iconToast.className = 'fas fa-exclamation-triangle';
     } else {
-        toastIcon.className = 'fas fa-check-circle';
+        iconToast.className = 'fas fa-check-circle';
     }
-    
-    toastMessage.textContent = message;
+
+    // Hien thi noi dung
+    noiDungToast.textContent = noiDung;
     toast.classList.add('show');
-    
+
+    // Tu dong an sau 4 giay
     setTimeout(() => {
         toast.classList.remove('show');
     }, 4000);
 }
 
+// Alias cho ham cu (de tuong thich nguoc)
+function hienThiThongBao(noiDung, loai) {
+    showToast(noiDung, loai);
+}
+
 // =============================================
-// PASSWORD TOGGLE
+// AN/HIEN MAT KHAU
 // =============================================
-function togglePassword(inputId, iconElement) {
-    const passwordInput = document.getElementById(inputId);
-    const icon = iconElement.querySelector('i');
-    
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
+function togglePassword(idInput, phanTuIcon) {
+    const inputMatKhau = document.getElementById(idInput);
+    const icon = phanTuIcon.querySelector('i');
+
+    if (inputMatKhau.type === 'password') {
+        inputMatKhau.type = 'text';
         icon.classList.remove('fa-eye');
         icon.classList.add('fa-eye-slash');
     } else {
-        passwordInput.type = 'password';
+        inputMatKhau.type = 'password';
         icon.classList.remove('fa-eye-slash');
         icon.classList.add('fa-eye');
     }
 }
 
+// Alias cho ham cu
+function anHienMatKhau(idInput, phanTuIcon) {
+    togglePassword(idInput, phanTuIcon);
+}
+
 // =============================================
-// VALIDATION HELPERS
+// HAM KIEM TRA DU LIEU
 // =============================================
+function kiemTraEmail(email) {
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regexEmail.test(email);
+}
+
+function kiemTraSoDienThoai(soDienThoai) {
+    const regexSDT = /^(0|\+84)[0-9]{9,10}$/;
+    return regexSDT.test(soDienThoai.replace(/\s/g, ''));
+}
+
+// Alias cho ham cu (de tuong thich nguoc)
 function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return kiemTraEmail(email);
 }
 
 function isValidPhone(phone) {
-    const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
+    return kiemTraSoDienThoai(phone);
 }
 
 // =============================================
-// LOGIN FORM HANDLER
+// XU LY FORM DANG NHAP
 // =============================================
-function handleLogin(e) {
-    e.preventDefault();
-    
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    
-    // Validation
-    if (!username) {
-        showToast('Vui lòng nhập tên đăng nhập', 'error');
+function xuLyDangNhap(suKien) {
+    suKien.preventDefault();
+
+    const tenDangNhap = document.getElementById('loginUsername').value.trim();
+    const matKhau = document.getElementById('loginPassword').value;
+
+    // Kiem tra du lieu
+    if (!tenDangNhap) {
+        showToast('Vui long nhap ten dang nhap', 'error');
         document.getElementById('loginUsername').focus();
         return;
     }
-    
-    if (!password) {
-        showToast('Vui lòng nhập mật khẩu', 'error');
+
+    if (!matKhau) {
+        showToast('Vui long nhap mat khau', 'error');
         document.getElementById('loginPassword').focus();
         return;
     }
-    
-    const submitBtn = document.querySelector('#loginForm .submit-btn');
-    submitBtn.classList.add('loading');
-    
-    const loginData = {
-        tenDangNhap: username,
-        matKhau: password
+
+    // Hien thi trang thai dang tai
+    const nutGuiForm = document.querySelector('#loginForm .submit-btn');
+    nutGuiForm.classList.add('loading');
+
+    const duLieuDangNhap = {
+        tenDangNhap: tenDangNhap,
+        matKhau: matKhau
     };
-    
-    // Gọi API đăng nhập
-    callLoginAPI(loginData)
+
+    // Goi API dang nhap
+    goiAPIDangNhap(duLieuDangNhap)
         .finally(() => {
-            submitBtn.classList.remove('loading');
+            nutGuiForm.classList.remove('loading');
         });
 }
 
+// Alias cho ham cu
+function handleLogin(e) {
+    xuLyDangNhap(e);
+}
+
 // =============================================
-// REGISTER FORM HANDLER
+// XU LY FORM DANG KY
 // =============================================
-function handleRegister(e) {
-    e.preventDefault();
-    
-    const username = document.getElementById('regUsername').value.trim();
-    const password = document.getElementById('regPassword').value;
-    const confirmPassword = document.getElementById('regConfirmPassword').value;
-    const fullName = document.getElementById('regFullName').value.trim();
+function xuLyDangKy(suKien) {
+    suKien.preventDefault();
+
+    const tenDangNhap = document.getElementById('regUsername').value.trim();
+    const matKhau = document.getElementById('regPassword').value;
+    const xacNhanMatKhau = document.getElementById('regConfirmPassword').value;
+    const hoTen = document.getElementById('regFullName').value.trim();
     const email = document.getElementById('regEmail').value.trim();
-    const phone = document.getElementById('regPhone').value.trim();
-    
-    // Validation
-    if (!username || username.length < 4) {
-        showToast('Tên đăng nhập phải có ít nhất 4 ký tự', 'error');
+    const soDienThoai = document.getElementById('regPhone').value.trim();
+
+    // Kiem tra du lieu
+    if (!tenDangNhap || tenDangNhap.length < 4) {
+        showToast('Ten dang nhap phai co it nhat 4 ky tu', 'error');
         document.getElementById('regUsername').focus();
         return;
     }
-    
-    if (!password || password.length < 6) {
-        showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error');
+
+    if (!matKhau || matKhau.length < 6) {
+        showToast('Mat khau phai co it nhat 6 ky tu', 'error');
         document.getElementById('regPassword').focus();
         return;
     }
-    
-    if (password !== confirmPassword) {
-        showToast('Mật khẩu xác nhận không khớp', 'error');
+
+    if (matKhau !== xacNhanMatKhau) {
+        showToast('Mat khau xac nhan khong khop', 'error');
         document.getElementById('regConfirmPassword').focus();
         return;
     }
-    
-    if (!fullName) {
-        showToast('Vui lòng nhập họ và tên', 'error');
+
+    if (!hoTen) {
+        showToast('Vui long nhap ho va ten', 'error');
         document.getElementById('regFullName').focus();
         return;
     }
-    
-    if (email && !isValidEmail(email)) {
-        showToast('Email không hợp lệ', 'error');
+
+    if (email && !kiemTraEmail(email)) {
+        showToast('Email khong hop le', 'error');
         document.getElementById('regEmail').focus();
         return;
     }
-    
-    if (phone && !isValidPhone(phone)) {
-        showToast('Số điện thoại không hợp lệ', 'error');
+
+    if (soDienThoai && !kiemTraSoDienThoai(soDienThoai)) {
+        showToast('So dien thoai khong hop le', 'error');
         document.getElementById('regPhone').focus();
         return;
     }
-    
-    const submitBtn = document.querySelector('#registerForm .submit-btn');
-    submitBtn.classList.add('loading');
-    
-    const registerData = {
-        tenDangNhap: username,
-        matKhau: password,
-        hoTen: fullName,
+
+    // Hien thi trang thai dang tai
+    const nutGuiForm = document.querySelector('#registerForm .submit-btn');
+    nutGuiForm.classList.add('loading');
+
+    const duLieuDangKy = {
+        tenDangNhap: tenDangNhap,
+        matKhau: matKhau,
+        hoTen: hoTen,
         email: email,
-        soDienThoai: phone
+        soDienThoai: soDienThoai
     };
-    
-    // Gọi API đăng ký
-    callRegisterAPI(registerData)
+
+    // Goi API dang ky
+    goiAPIDangKy(duLieuDangKy)
         .finally(() => {
-            submitBtn.classList.remove('loading');
+            nutGuiForm.classList.remove('loading');
         });
 }
 
+// Alias cho ham cu
+function handleRegister(e) {
+    xuLyDangKy(e);
+}
+
 // =============================================
-// API FUNCTIONS (Chuẩn bị sẵn)
+// CAC HAM GOI API
 // =============================================
 
-async function callChangePasswordAPI(data) {
+// API Doi mat khau
+async function goiAPIDoiMatKhau(duLieu) {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+        const phanHoi = await fetch(`${API_BASE_URL}/auth/change-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(duLieu)
         });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            showToast(result.thongBao || 'Đổi mật khẩu thành công!', 'success');
-            
-            // Quay lại trang đăng nhập sau 2 giây
+
+        const ketQua = await phanHoi.json();
+
+        if (phanHoi.ok) {
+            showToast(ketQua.thongBao || 'Doi mat khau thanh cong!', 'success');
+
+            // Quay lai trang dang nhap sau 2 giay
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 2000);
         } else {
-            showToast(result.thongBao || 'Đổi mật khẩu thất bại', 'error');
+            showToast(ketQua.thongBao || 'Doi mat khau that bai', 'error');
         }
-    } catch (error) {
-        console.error('Change password error:', error);
-        showToast('Lỗi kết nối server', 'error');
+    } catch (loi) {
+        console.error('Loi doi mat khau:', loi);
+        showToast('Loi ket noi server', 'error');
     }
 }
 
-async function callLoginAPI(data) {
+// Alias cho ham cu
+async function callChangePasswordAPI(data) {
+    return goiAPIDoiMatKhau(data);
+}
+
+// API Dang nhap
+async function goiAPIDangNhap(duLieu) {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        const phanHoi = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(duLieu)
         });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            localStorage.setItem('token', result.token);
-            localStorage.setItem('role', result.role);
-            localStorage.setItem('fullName', result.fullName);
-            
-            showToast('Đăng nhập thành công!', 'success');
-            
+
+        const ketQua = await phanHoi.json();
+
+        if (phanHoi.ok) {
+            // Luu thong tin vao localStorage
+            localStorage.setItem('token', ketQua.token);
+            localStorage.setItem('role', ketQua.role);
+            localStorage.setItem('fullName', ketQua.fullName);
+
+            showToast('Dang nhap thanh cong!', 'success');
+
+            // Chuyen huong theo vai tro
+            // ADMIN va STAFF dung chung 1 trang quan ly
             setTimeout(() => {
-                if (result.role === 'ADMIN') {
+                if (ketQua.role === 'ADMIN' || ketQua.role === 'STAFF') {
                     window.location.href = 'admin-dashboard.html';
-                } else if (result.role === 'STAFF') {
-                    window.location.href = 'staff-dashboard.html';
                 } else {
                     window.location.href = 'dashboard.html';
                 }
             }, 1000);
         } else {
-            showToast(result.thongBao || 'Đăng nhập thất bại', 'error');
+            showToast(ketQua.thongBao || 'Dang nhap that bai', 'error');
         }
-    } catch (error) {
-        console.error('Login error:', error);
-        showToast('Lỗi kết nối server', 'error');
+    } catch (loi) {
+        console.error('Loi dang nhap:', loi);
+        showToast('Loi ket noi server', 'error');
     }
 }
 
-async function callRegisterAPI(data) {
+// Alias cho ham cu
+async function callLoginAPI(data) {
+    return goiAPIDangNhap(data);
+}
+
+// API Dang ky
+async function goiAPIDangKy(duLieu) {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        const phanHoi = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(duLieu)
         });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            showToast(result.thongBao || 'Đăng ký thành công!', 'success');
+
+        const ketQua = await phanHoi.json();
+
+        if (phanHoi.ok) {
+            showToast(ketQua.thongBao || 'Dang ky thanh cong!', 'success');
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 1500);
         } else {
-            showToast(result.thongBao || 'Đăng ký thất bại', 'error');
+            showToast(ketQua.thongBao || 'Dang ky that bai', 'error');
         }
-    } catch (error) {
-        console.error('Register error:', error);
-        showToast('Lỗi kết nối server', 'error');
+    } catch (loi) {
+        console.error('Loi dang ky:', loi);
+        showToast('Loi ket noi server', 'error');
     }
 }
 
+// Alias cho ham cu
+async function callRegisterAPI(data) {
+    return goiAPIDangKy(data);
+}
+
 // =============================================
-// INITIALIZATION
+// KHOI TAO KHI TAI TRANG
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Login form
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
+    // Form dang nhap
+    const formDangNhap = document.getElementById('loginForm');
+    if (formDangNhap) {
+        formDangNhap.addEventListener('submit', xuLyDangNhap);
     }
-    
-    // Register form
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', handleRegister);
+
+    // Form dang ky
+    const formDangKy = document.getElementById('registerForm');
+    if (formDangKy) {
+        formDangKy.addEventListener('submit', xuLyDangKy);
     }
-    
-    console.log('VCB Digibank initialized!');
+
+    console.log('VCB Digibank da khoi tao!');
 });

@@ -1,0 +1,310 @@
+/* CSS DON GIAN - MAU SAC NHE NHANG */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f6f7;
+    color: #1c1e21;
+}
+
+/* SIDEBAR - Mau xam nhat */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 220px;
+    height: 100%;
+    background-color: #ffffff;
+    border-right: 1px solid #dddfe2;
+}
+
+.sidebar-header {
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    border-bottom: 1px solid #dddfe2;
+    color: #1877f2;
+}
+
+.sidebar-nav {
+    padding: 10px 0;
+}
+
+.sidebar-nav a {
+    display: block;
+    padding: 10px 15px;
+    color: #1c1e21;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.sidebar-nav a:hover {
+    background-color: #f5f6f7;
+}
+
+.sidebar-nav a.active {
+    background-color: #e7f3ff;
+    color: #1877f2;
+    font-weight: bold;
+}
+
+.badge {
+    background-color: #fa3e3e;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 5px;
+}
+
+.sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 15px;
+    border-top: 1px solid #dddfe2;
+}
+
+.sidebar-footer a {
+    color: #65676b;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.sidebar-footer a:hover {
+    color: #1877f2;
+}
+
+/* MAIN CONTENT */
+.main-content {
+    margin-left: 220px;
+    min-height: 100vh;
+}
+
+.header {
+    background-color: #ffffff;
+    padding: 15px 20px;
+    border-bottom: 1px solid #dddfe2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 18px;
+    color: #1c1e21;
+    font-weight: 600;
+}
+
+.user-info {
+    color: #65676b;
+    font-size: 14px;
+}
+
+.content {
+    padding: 20px;
+}
+
+/* TAB */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* CARD */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    padding: 15px;
+    border-bottom: 1px solid #dddfe2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    font-size: 15px;
+    color: #1c1e21;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 0;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dddfe2;
+    font-size: 13px;
+}
+
+th {
+    background-color: #f5f6f7;
+    font-weight: 600;
+    color: #65676b;
+}
+
+td {
+    color: #1c1e21;
+}
+
+tr:hover {
+    background-color: #f5f6f7;
+}
+
+.loading {
+    text-align: center;
+    color: #65676b;
+    padding: 20px;
+}
+
+/* BUTTON */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: #1877f2;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #166fe5;
+}
+
+.btn-success {
+    background-color: #42b72a;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #36a420;
+}
+
+.btn-danger {
+    background-color: #fa3e3e;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #e03131;
+}
+
+.btn-warning {
+    background-color: #f7b928;
+    color: #1c1e21;
+}
+
+.btn-warning:hover {
+    background-color: #e5a91f;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+/* STATUS */
+.status-active {
+    background-color: #e6f7e6;
+    color: #31a24c;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-pending {
+    background-color: #fff4e5;
+    color: #f7b928;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-locked {
+    background-color: #ffe8e8;
+    color: #fa3e3e;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* FILTER */
+select {
+    padding: 8px 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    font-size: 13px;
+    background-color: #ffffff;
+}
+
+select:focus {
+    border-color: #1877f2;
+    outline: none;
+}
+
+/* TOAST */
+.toast {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background-color: #1c1e21;
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 9999;
+}
+
+.toast.show {
+    display: block;
+}
+
+.toast.success {
+    background-color: #42b72a;
+}
+
+.toast.error {
+    background-color: #fa3e3e;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+}

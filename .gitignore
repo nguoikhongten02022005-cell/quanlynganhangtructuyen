@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Windows reserved device file
+nul
+
+# AI / local tool config
+.claude/

@@ -45,8 +45,9 @@ builder.Services.AddCors(options =>
 // Đăng ký các Service (BLL) vào hệ thống
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IKhachHangService, KhachHangService>();
-builder.Services.AddScoped<ITaiKhoanService, TaiKhoanService>();
+// Các Service dưới đây sẽ do người khác làm (Phần B, C, D, E)
+// builder.Services.AddScoped<IKhachHangService, KhachHangService>();
+// builder.Services.AddScoped<ITaiKhoanService, TaiKhoanService>();
 
 var app = builder.Build();
 
