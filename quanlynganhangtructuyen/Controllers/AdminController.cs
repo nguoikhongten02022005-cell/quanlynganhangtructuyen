@@ -19,7 +19,6 @@ namespace quanlynganhangtructuyen.Controllers
         }
 
         [HttpGet("users")]
-        [HttpGet("users")]
         public async Task<IActionResult> LayDanhSachNguoiDung([FromQuery] string? role, [FromQuery] string? status)
         {
             var ketQua = await _dichVuNguoiDung.GetUsersAsync(role, status);
