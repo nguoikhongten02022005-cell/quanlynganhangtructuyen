@@ -17,7 +17,6 @@ namespace quanlynganhangtructuyen.Controllers
             _dichVuKhachHang = dichVuKhachHang;
         }
 
-        // GET /api/customer/profile
         [HttpGet("profile")]
         public async Task<IActionResult> LayThongTinHoSo()
         {
