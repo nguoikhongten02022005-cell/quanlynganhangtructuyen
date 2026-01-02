@@ -75,5 +75,40 @@ namespace BLL.Services
                 trangThaiKYC = khachHang.TrangThaiKYC
             };
         }
+        public async Task<object> LayThongTinTaiKhoanAsync(int maNguoiDung)
+        {
+            // Tìm khách hàng từ người dùng
+            var khachHang = await _db.KhachHang
+                .FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
+
+            if (khachHang == null)
+            {
+                throw new Exception("Không tìm thấy hồ sơ khách hàng.");
+            }
+
+            // Tìm tài khoản của khách hàng
+            var taiKhoan = await _db.TaiKhoan
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.MaKhachHang == khachHang.MaKhachHang);
+
+            if (taiKhoan == null)
+            {
+                throw new Exception("Không tìm thấy tài khoản ngân hàng.");
+            }
+
+            // Kiểm tra tài khoản có bị khóa không
+            if (taiKhoan.TrangThai != "ACTIVE")
+            {
+                throw new Exception("Tài khoản ngân hàng đã bị khóa.");
+            }
+
+            return new
+            {
+                soTaiKhoan = taiKhoan.SoTaiKhoan,
+                soDu = taiKhoan.SoDu,
+                trangThai = taiKhoan.TrangThai,
+                hoTen = khachHang.HoTen
+            };
+        }
     }
 }

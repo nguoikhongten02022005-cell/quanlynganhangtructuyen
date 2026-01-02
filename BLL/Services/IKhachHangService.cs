@@ -7,5 +7,6 @@ namespace BLL.Services
     {
         Task<object> GuiYeuCauKycAsync(int maNguoiDung, KycRequest request);
         Task<object> LayThongTinHoSoAsync(int maNguoiDung);
+        Task<object> LayThongTinTaiKhoanAsync(int maNguoiDung);
     }
 }
