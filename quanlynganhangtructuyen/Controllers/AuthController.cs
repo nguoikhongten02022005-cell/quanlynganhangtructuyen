@@ -51,9 +51,6 @@ namespace quanlynganhangtructuyen.Controllers
             }
         }
 
-        /// <summary>
-        /// Đăng nhập và trả về JWT token + role + họ tên
-        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> DangNhap([FromBody] DangNhapRequest req)
         {
@@ -64,16 +61,12 @@ namespace quanlynganhangtructuyen.Controllers
 
             try
             {
-                // Gọi Service để kiểm tra đăng nhập
                 var nguoiDung = await _authService.DangNhapAsync(req.TenDangNhap, req.MatKhau);
 
-                // Logic hiển thị tên (Phần này vẫn giữ ở Controller vì liên quan đến việc Build Token trả về Client)
                 string hoTenHienThi = "";
 
                 if (nguoiDung.VaiTro == "CUSTOMER")
                 {
-                    // Nếu là Khách -> Phải tìm tên trong bảng KhachHang
-                    // Lưu ý: Có thể chuyển logic này vào Service nếu muốn triệt để hơn
                     var khach = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == nguoiDung.MaNguoiDung);
                     if (khach == null)
                     {
@@ -93,7 +86,6 @@ namespace quanlynganhangtructuyen.Controllers
                     hoTenHienThi = "Giao Dịch Viên";
                 }
 
-                // Tạo Token
                 string token = TaoJwtToken(nguoiDung, hoTenHienThi);
 
                 return Ok(new
@@ -111,9 +103,6 @@ namespace quanlynganhangtructuyen.Controllers
             }
         }
 
-        /// <summary>
-        /// Đổi mật khẩu (dành cho người đã đăng nhập)
-        /// </summary>
         [Authorize]
         [HttpPost("change-password")]
         public async Task<IActionResult> DoiMatKhau([FromBody] DoiMatKhauRequest req)
@@ -136,7 +125,6 @@ namespace quanlynganhangtructuyen.Controllers
             }
         }
 
-        // ===================== HÀM PHỤ =====================
 
         private string TaoJwtToken(NguoiDung nguoiDung, string hoTen)
         {
