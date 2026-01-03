@@ -27,7 +27,7 @@ namespace quanlynganhangtructuyen.Controllers
             try
             {
                 var thongTinTaiKhoan = await _dichVuKhachHang.LayThongTinTaiKhoanAsync(maNguoiDung);
-                return Ok(new { data = thongTinTaiKhoan });
+                return Ok(thongTinTaiKhoan);
             }
             catch (Exception ex)
             {

@@ -82,6 +82,60 @@ namespace quanlynganhangtructuyen.Controllers
             }
         }
 
+        // Quên mật khẩu: nhập tên đăng nhập để nhận token (demo trả token trực tiếp)
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> QuenMatKhau([FromBody] QuenMatKhauRequest req)
+        {
+            var tenDangNhap = (req.TenDangNhap ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(tenDangNhap))
+                return BadRequest(new { thongBao = "Vui lòng nhập tên đăng nhập." });
+
+            try
+            {
+                var result = await _authService.TaoTokenQuenMatKhauAsync(tenDangNhap);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
+        // Đặt lại mật khẩu: token + mật khẩu mới + nhập lại
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> DatLaiMatKhau([FromBody] DatLaiMatKhauRequest req)
+        {
+            var tenDangNhap = (req.TenDangNhap ?? "").Trim();
+            var token = (req.Token ?? "").Trim();
+            var matKhauMoi = req.MatKhauMoi ?? "";
+            var nhapLai = req.NhapLaiMatKhauMoi ?? "";
+
+            if (string.IsNullOrWhiteSpace(tenDangNhap) || string.IsNullOrWhiteSpace(token))
+                return BadRequest(new { thongBao = "Thiếu tên đăng nhập hoặc token." });
+
+            if (string.IsNullOrWhiteSpace(matKhauMoi) || string.IsNullOrWhiteSpace(nhapLai))
+                return BadRequest(new { thongBao = "Vui lòng nhập mật khẩu mới và nhập lại." });
+
+            if (matKhauMoi != nhapLai)
+                return BadRequest(new { thongBao = "Mật khẩu nhập lại không khớp." });
+
+            if (matKhauMoi.Length < 6)
+                return BadRequest(new { thongBao = "Mật khẩu mới phải có ít nhất 6 ký tự." });
+
+            if (matKhauMoi.Length > 50)
+                return BadRequest(new { thongBao = "Mật khẩu mới không được quá 50 ký tự." });
+
+            try
+            {
+                await _authService.DatLaiMatKhauAsync(tenDangNhap, token, matKhauMoi);
+                return Ok(new { thongBao = "Đặt lại mật khẩu thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
         [Authorize]
         [HttpPost("change-password")]
         public async Task<IActionResult> DoiMatKhau([FromBody] DoiMatKhauRequest req)
