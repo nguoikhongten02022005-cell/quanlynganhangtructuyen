@@ -18,14 +18,6 @@ namespace quanlynganhangtructuyen.Controllers
             _dichVuNguoiDung = dichVuNguoiDung;
         }
 
-        // ==================== PHẦN KYC - NGƯỜI KHÁC LÀM ====================
-        // GET /api/admin/kyc-pending
-        // POST /api/admin/kyc-approve
-        // Các API này sẽ được người làm phần B (CustomerController) bổ sung sau
-        // khi họ tạo IKhachHangService và KhachHangService
-        // ===================================================================
-
-        // GET /api/admin/users
         [HttpGet("users")]
         public async Task<IActionResult> LayDanhSachNguoiDung([FromQuery] string? role, [FromQuery] string? status)
         {
@@ -33,7 +25,6 @@ namespace quanlynganhangtructuyen.Controllers
             return Ok(ketQua);
         }
 
-        // PUT /api/admin/users/{id}/lock
         [HttpPut("users/{id}/lock")]
         public async Task<IActionResult> KhoaTaiKhoan(int id, [FromBody] KhoaTaiKhoanRequest yeuCau)
         {
@@ -54,7 +45,5 @@ namespace quanlynganhangtructuyen.Controllers
             }
         }
 
-        // GET /api/admin/dashboard - Báo cáo tổng quan (tối giản)
-        // TODO: Sẽ bổ sung sau khi có đầy đủ dữ liệu từ các phần khác
     }
 }
