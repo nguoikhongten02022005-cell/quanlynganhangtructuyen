@@ -41,8 +41,6 @@ function hienThiThongBao(noiDung, loai) {
 }
 
 // =============================================
-// AN/HIEN MAT KHAU
-// =============================================
 function togglePassword(idInput, phanTuIcon) {
     const inputMatKhau = document.getElementById(idInput);
     const icon = phanTuIcon.querySelector('i');
