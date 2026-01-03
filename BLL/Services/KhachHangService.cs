@@ -110,5 +110,29 @@ namespace BLL.Services
                 hoTen = khachHang.HoTen
             };
         }
+
+        public async Task<object> LayDanhSachKycPendingAsync()
+        {
+            var danhSachKhachHang = await _db.KhachHang
+                .AsNoTracking()
+                .Where(x => x.TrangThaiKYC == "PENDING")
+                .Select(x => new 
+                {
+                    maKhachHang = x.MaKhachHang,
+                    maNguoiDung = x.MaNguoiDung,
+                    hoTen = x.HoTen,
+                    email = x.Email,
+                    soDienThoai = x.SoDienThoai,
+                    soCCCD = x.SoCCCD,
+                    trangThaiKYC = x.TrangThaiKYC
+                })
+                .ToListAsync();
+
+            return new
+            {
+                danhSach = danhSachKhachHang,
+                tongSo = danhSachKhachHang.Count
+            };
+        }
     }
 }
