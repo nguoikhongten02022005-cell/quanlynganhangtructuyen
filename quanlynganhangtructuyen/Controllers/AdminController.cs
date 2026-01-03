@@ -12,10 +12,12 @@ namespace quanlynganhangtructuyen.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IUserService _dichVuNguoiDung;
+        private readonly IKhachHangService _dichVuKhachHang;
 
-        public AdminController(IUserService dichVuNguoiDung)
+        public AdminController(IUserService dichVuNguoiDung, IKhachHangService dichVuKhachHang)
         {
             _dichVuNguoiDung = dichVuNguoiDung;
+            _dichVuKhachHang = dichVuKhachHang;
         }
 
         [HttpGet("users")]
@@ -45,5 +47,22 @@ namespace quanlynganhangtructuyen.Controllers
             }
         }
 
+        [HttpGet("kyc-pending")]
+        public async Task<IActionResult> LayDanhSachKycPending()
+        {
+            try
+            {
+                var ketQua = await _dichVuKhachHang.LayDanhSachKycPendingAsync();
+                return Ok(new 
+                { 
+                    success = true, 
+                    data = ketQua 
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
     }
 }
