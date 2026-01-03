@@ -35,6 +35,7 @@ namespace quanlynganhangtructuyen.Controllers
                 return BadRequest(new { thongBao = ex.Message });
             }
         }
+
         [HttpPost("kyc")]
         public async Task<IActionResult> GuiYeuCauKyc([FromBody] KycRequest request)
         {

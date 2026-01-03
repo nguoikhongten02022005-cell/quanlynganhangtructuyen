@@ -35,6 +35,7 @@ namespace BLL.Services
                 trangThaiKYC = khachHang.TrangThaiKYC
             };
         }
+
         public async Task<object> GuiYeuCauKycAsync(int maNguoiDung, KycRequest request)
         {
             // Kiểm tra xem khách hàng có tồn tại không
@@ -75,6 +76,7 @@ namespace BLL.Services
                 trangThaiKYC = khachHang.TrangThaiKYC
             };
         }
+
         public async Task<object> LayThongTinTaiKhoanAsync(int maNguoiDung)
         {
             // Tìm khách hàng từ người dùng
@@ -116,7 +118,7 @@ namespace BLL.Services
             var danhSachKhachHang = await _db.KhachHang
                 .AsNoTracking()
                 .Where(x => x.TrangThaiKYC == "PENDING")
-                .Select(x => new 
+                .Select(x => new
                 {
                     maKhachHang = x.MaKhachHang,
                     maNguoiDung = x.MaNguoiDung,
