@@ -28,18 +28,25 @@ namespace BLL.Services
                 query = query.Where(u => u.TrangThai == status.ToUpperInvariant());
             }
 
-            var users = await query
-                .Select(u => new
+            var usersData = await query
+                .GroupJoin(_db.KhachHang, 
+                    u => u.MaNguoiDung, 
+                    k => k.MaNguoiDung, 
+                    (u, k) => new { u, k = k.FirstOrDefault() })
+                .Select(x => new
                 {
-                    userId = u.MaNguoiDung,
-                    username = u.TenDangNhap,
-                    role = u.VaiTro,
-                    status = u.TrangThai,
-                    createdAt = u.NgayTao
+                    maNguoiDung = x.u.MaNguoiDung,
+                    tenDangNhap = x.u.TenDangNhap,
+                    vaiTro = x.u.VaiTro,
+                    trangThai = x.u.TrangThai,
+                    hoTen = x.k != null ? x.k.HoTen : (x.u.VaiTro == "ADMIN" ? "Quản Trị Viên" : "Nhân Viên"),
+                    email = x.k != null ? x.k.Email : null,
+                    soDienThoai = x.k != null ? x.k.SoDienThoai : null,
+                    ngayTao = x.u.NgayTao
                 })
                 .ToListAsync();
 
-            return new { total = users.Count, users };
+            return new { tongSo = usersData.Count, danhSach = usersData };
         }
 
         /// <summary>

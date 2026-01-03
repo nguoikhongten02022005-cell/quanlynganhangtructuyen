@@ -29,11 +29,11 @@ async function callApi(endpoint, method = 'GET', body = null) {
     try {
         const response = await fetch(url, options);
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.thongBao || 'Lỗi hệ thống');
         }
-        
+
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -116,12 +116,12 @@ async function loadUsersData() {
     try {
         const role = document.getElementById('roleFilter').value;
         const status = document.getElementById('statusFilter').value;
-        
+
         let endpoint = '/admin/users';
         const params = [];
         if (role) params.push(`role=${role}`);
         if (status) params.push(`status=${status}`);
-        
+
         if (params.length > 0) {
             endpoint += '?' + params.join('&');
         }
