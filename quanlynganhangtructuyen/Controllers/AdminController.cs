@@ -12,20 +12,14 @@ namespace quanlynganhangtructuyen.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IUserService _dichVuNguoiDung;
+        private readonly IKhachHangService _dichVuKhachHang;
 
-        public AdminController(IUserService dichVuNguoiDung)
+        public AdminController(IUserService dichVuNguoiDung, IKhachHangService dichVuKhachHang)
         {
             _dichVuNguoiDung = dichVuNguoiDung;
+            _dichVuKhachHang = dichVuKhachHang;
         }
 
-        // ==================== PHẦN KYC - NGƯỜI KHÁC LÀM ====================
-        // GET /api/admin/kyc-pending
-        // POST /api/admin/kyc-approve
-        // Các API này sẽ được người làm phần B (CustomerController) bổ sung sau
-        // khi họ tạo IKhachHangService và KhachHangService
-        // ===================================================================
-
-        // GET /api/admin/users
         [HttpGet("users")]
         public async Task<IActionResult> LayDanhSachNguoiDung([FromQuery] string? role, [FromQuery] string? status)
         {
@@ -33,7 +27,6 @@ namespace quanlynganhangtructuyen.Controllers
             return Ok(ketQua);
         }
 
-        // PUT /api/admin/users/{id}/lock
         [HttpPut("users/{id}/lock")]
         public async Task<IActionResult> KhoaTaiKhoan(int id, [FromBody] KhoaTaiKhoanRequest yeuCau)
         {
@@ -54,7 +47,22 @@ namespace quanlynganhangtructuyen.Controllers
             }
         }
 
-        // GET /api/admin/dashboard - Báo cáo tổng quan (tối giản)
-        // TODO: Sẽ bổ sung sau khi có đầy đủ dữ liệu từ các phần khác
+        [HttpGet("kyc-pending")]
+        public async Task<IActionResult> LayDanhSachKycPending()
+        {
+            try
+            {
+                var ketQua = await _dichVuKhachHang.LayDanhSachKycPendingAsync();
+                return Ok(new 
+                { 
+                    success = true, 
+                    data = ketQua 
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
     }
 }

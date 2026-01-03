@@ -5,10 +5,9 @@ namespace BLL.Services
 {
     public interface IKhachHangService
     {
-        // Lấy thông tin hồ sơ khách hàng
+        Task<object> GuiYeuCauKycAsync(int maNguoiDung, KycRequest request);
         Task<object> LayThongTinHoSoAsync(int maNguoiDung);
-
-        // Gửi thông tin KYC
-        Task<object> GuiKycAsync(int maNguoiDung, KycRequest request);
+        Task<object> LayThongTinTaiKhoanAsync(int maNguoiDung);
+        Task<object> LayDanhSachKycPendingAsync();
     }
 }
