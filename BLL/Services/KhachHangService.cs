@@ -136,5 +136,44 @@ namespace BLL.Services
                 tongSo = danhSachKhachHang.Count
             };
         }
+
+        public async Task<object> DuyetKYCAsync(int customerId, string status, string? reason = null)
+        {
+            // Tìm khách hàng theo mã người dùng
+            var khachHang = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == customerId);
+
+            if (khachHang == null)
+            {
+                throw new Exception("Không tìm thấy khách hàng.");
+            }
+
+            // Kiểm tra trạng thái KYC hiện tại
+            if (khachHang.TrangThaiKYC != "PENDING")
+            {
+                throw new Exception("Hồ sơ KYC không ở trạng thái chờ duyệt.");
+            }
+
+            // Xác thực trạng thái mới
+            if (status != "APPROVED" && status != "REJECTED")
+            {
+                throw new Exception("Trạng thái không hợp lệ. Chỉ chấp nhận APPROVED hoặc REJECTED.");
+            }
+
+            // Cập nhật trạng thái KYC
+            khachHang.TrangThaiKYC = status;
+
+            // Lưu thay đổi vào cơ sở dữ liệu
+            await _db.SaveChangesAsync();
+
+            // Trả về kết quả
+            return new
+            {
+                thongBao = status == "APPROVED" ? "Duyệt KYC thành công." : "Từ chối KYC thành công.",
+                maKhachHang = khachHang.MaKhachHang,
+                maNguoiDung = khachHang.MaNguoiDung,
+                trangThaiMoi = status,
+                lyDo = reason
+            };
+        }
     }
 }

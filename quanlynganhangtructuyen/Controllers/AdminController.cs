@@ -64,5 +64,19 @@ namespace quanlynganhangtructuyen.Controllers
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }
+
+        [HttpPost("kyc-approve")]
+        public async Task<IActionResult> DuyetKyc([FromBody] KycApproveRequest request)
+        {
+            try
+            {
+                var ketQua = await _dichVuKhachHang.DuyetKYCAsync(request.CustomerId, request.Status, request.Reason);
+                return Ok(ketQua);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
     }
 }

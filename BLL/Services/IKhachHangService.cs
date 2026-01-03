@@ -9,5 +9,6 @@ namespace BLL.Services
         Task<object> LayThongTinHoSoAsync(int maNguoiDung);
         Task<object> LayThongTinTaiKhoanAsync(int maNguoiDung);
         Task<object> LayDanhSachKycPendingAsync();
+        Task<object> DuyetKYCAsync(int customerId, string status, string? reason = null);
     }
 }
