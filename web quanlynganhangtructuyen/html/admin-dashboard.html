@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Ngân Hàng</title>
+    <link rel="stylesheet" href="../css/admin-dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Quản Lý Ngân Hàng</h1>
+            <div class="user-info">
+                <span id="fullName">Admin</span>
+                <button id="logoutBtn">Đăng Xuất</button>
+            </div>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#" class="nav-link active" data-section="dashboard">Tổng Quan</a></li>
+                <li><a href="#" class="nav-link" data-section="users">Người Dùng</a></li>
+                <li><a href="#" class="nav-link" data-section="kyc-pending">KYC Chờ Duyệt</a></li>
+                <li><a href="#" class="nav-link" data-section="kyc-approve">Duyệt KYC</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <h2>Báo Cáo Tổng Quan</h2>
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <h3>Tổng Người Dùng</h3>
+                        <p id="totalUsers">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>KYC Chờ Duyệt</h3>
+                        <p id="pendingKyc">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Tài Khoản Khóa</h3>
+                        <p id="lockedAccounts">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Section -->
+            <section id="users" class="section">
+                <h2>Danh Sách Người Dùng</h2>
+                <div class="filters">
+                    <select id="roleFilter">
+                        <option value="">Tất cả vai trò</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="STAFF">STAFF</option>
+                        <option value="CUSTOMER">CUSTOMER</option>
+                    </select>
+                    <select id="statusFilter">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="LOCKED">LOCKED</option>
+                    </select>
+                    <button id="filterUsersBtn">Lọc</button>
+                </div>
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Mã Người Dùng</th>
+                                <th>Tên Đăng Nhập</th>
+                                <th>Vai Trò</th>
+                                <th>Trạng Thái</th>
+                                <th>Họ Tên</th>
+                                <th>Email</th>
+                                <th>SĐT</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- KYC Pending Section -->
+            <section id="kyc-pending" class="section">
+                <h2>Danh Sách KYC Chờ Duyệt</h2>
+                <div class="table-container">
+                    <table id="kycPendingTable">
+                        <thead>
+                            <tr>
+                                <th>Mã Khách Hàng</th>
+                                <th>Mã Người Dùng</th>
+                                <th>Họ Tên</th>
+                                <th>Email</th>
+                                <th>SĐT</th>
+                                <th>Số CCCD</th>
+                                <th>Trạng Thái KYC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kycPendingTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- KYC Approve Section -->
+            <section id="kyc-approve" class="section">
+                <h2>Duyệt KYC</h2>
+                <div class="kyc-approve-form">
+                    <input type="number" id="customerId" placeholder="Mã khách hàng">
+                    <select id="kycStatus">
+                        <option value="APPROVED">Duyệt</option>
+                        <option value="REJECTED">Từ Chối</option>
+                    </select>
+                    <input type="text" id="kycReason" placeholder="Lý do (tùy chọn)">
+                    <button id="approveKycBtn">Duyệt KYC</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="../js/admin-dashboard.js"></script>
+</body>
+</html>
