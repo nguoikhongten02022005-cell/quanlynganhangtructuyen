@@ -124,5 +124,46 @@ namespace quanlynganhangtructuyen.Controllers
                 return BadRequest(new { thongBao = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Lấy lịch sử giao dịch của người dùng
+        /// </summary>
+        [HttpGet("history")]
+        public async Task<IActionResult> LichSuGiaoDich(
+            [FromQuery] int pageSize = 20,
+            [FromQuery] int pageNumber = 1)
+        {
+            // Validation
+            if (pageSize <= 0 || pageSize > 100)
+            {
+                return BadRequest(new { thongBao = "Kích thước trang phải từ 1 đến 100." });
+            }
+
+            if (pageNumber <= 0)
+            {
+                return BadRequest(new { thongBao = "Số trang phải lớn hơn 0." });
+            }
+
+            // Lấy maNguoiDung từ JWT token
+            string? maNguoiDungStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(maNguoiDungStr) || !int.TryParse(maNguoiDungStr, out int maNguoiDung))
+            {
+                return Unauthorized(new { thongBao = "Token không hợp lệ." });
+            }
+
+            try
+            {
+                var ketQua = await _transactionService.LayLichSuGiaoDichAsync(
+                    maNguoiDung,
+                    pageSize,
+                    pageNumber
+                );
+                return Ok(ketQua);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
     }
 }
