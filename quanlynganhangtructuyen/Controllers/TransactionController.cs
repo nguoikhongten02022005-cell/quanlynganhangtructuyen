@@ -88,5 +88,41 @@ namespace quanlynganhangtructuyen.Controllers
                 return BadRequest(new { thongBao = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Xác nhận OTP và hoàn tất chuyển tiền
+        /// </summary>
+        [HttpPost("confirm")]
+        public async Task<IActionResult> XacNhanOTP([FromBody] XacNhanOTPRequest req)
+        {
+            // Validation input
+            if (req == null)
+            {
+                return BadRequest(new { thongBao = "Dữ liệu không hợp lệ." });
+            }
+
+            if (req.MaGiaoDich <= 0)
+            {
+                return BadRequest(new { thongBao = "Mã giao dịch không hợp lệ." });
+            }
+
+            if (string.IsNullOrWhiteSpace(req.MaOTP) || req.MaOTP.Length != 6)
+            {
+                return BadRequest(new { thongBao = "Mã OTP phải có 6 chữ số." });
+            }
+
+            try
+            {
+                var ketQua = await _transactionService.XacNhanOTPVaChuyenTienAsync(
+                    req.MaGiaoDich,
+                    req.MaOTP
+                );
+                return Ok(ketQua);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
     }
 }
