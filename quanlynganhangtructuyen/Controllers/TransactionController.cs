@@ -1,6 +1,9 @@
 using BLL.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Model.Requests;
+using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace quanlynganhangtructuyen.Controllers
@@ -28,6 +31,56 @@ namespace quanlynganhangtructuyen.Controllers
             try
             {
                 var ketQua = await _transactionService.TraCuuTaiKhoanNhanAsync(accountNumber);
+                return Ok(ketQua);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Khởi tạo giao dịch chuyển tiền và sinh mã OTP
+        /// </summary>
+        [HttpPost("verify")]
+        public async Task<IActionResult> TaoGiaoDichVoiOTP([FromBody] TaoGiaoDichRequest req)
+        {
+            // Validation input
+            if (req == null)
+            {
+                return BadRequest(new { thongBao = "Dữ liệu không hợp lệ." });
+            }
+
+            if (string.IsNullOrWhiteSpace(req.ToAccount))
+            {
+                return BadRequest(new { thongBao = "Vui lòng cung cấp số tài khoản nhận." });
+            }
+
+            if (req.Amount <= 0)
+            {
+                return BadRequest(new { thongBao = "Số tiền phải lớn hơn 0." });
+            }
+
+            if (string.IsNullOrWhiteSpace(req.Message))
+            {
+                return BadRequest(new { thongBao = "Vui lòng nhập nội dung chuyển khoản." });
+            }
+
+            // Lấy maNguoiDung từ JWT token
+            string? userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out int maNguoiDung))
+            {
+                return Unauthorized(new { thongBao = "Token không hợp lệ." });
+            }
+
+            try
+            {
+                var ketQua = await _transactionService.TaoGiaoDichVoiOTPAsync(
+                    maNguoiDung,
+                    req.ToAccount,
+                    req.Amount,
+                    req.Message
+                );
                 return Ok(ketQua);
             }
             catch (Exception ex)
