@@ -1,28 +1,26 @@
-﻿﻿ALTER DATABASE QuanLyNganHangTrucTuyen 
-SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-DROP DATABASE QuanLyNganHangTrucTuyen;
+﻿﻿USE master;
 GO
 
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'QuanLyNganHangTrucTuyen')
+BEGIN
+    ALTER DATABASE QuanLyNganHangTrucTuyen SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE QuanLyNganHangTrucTuyen;
+END
+GO
+
+CREATE DATABASE QuanLyNganHangTrucTuyen;
+GO
 
 USE QuanLyNganHangTrucTuyen;
 GO
-SELECT name FROM sys.databases WHERE name = 'QuanLyNganHangTrucTuyen';
-USE master;
-GO
-
-
-CREATE DATABASE QuanLyNganHangTrucTuyen;
-go
-use QuanLyNganHangTrucTuyen;
-go
-
 
 CREATE TABLE NguoiDung (
     MaNguoiDung INT PRIMARY KEY IDENTITY(1,1),
     TenDangNhap VARCHAR(50) UNIQUE NOT NULL,
-    MatKhauHash VARCHAR(255) NOT NULL,
-    VaiTro VARCHAR(20) CHECK (VaiTro IN ('ADMIN', 'STAFF', 'CUSTOMER')),
-    NgayTao DATETIME DEFAULT GETDATE()
+    MatKhauHash VARCHAR(255) NOT NULL,  
+    VaiTro VARCHAR(10) NOT NULL DEFAULT 'CUSTOMER' CHECK (VaiTro IN ('ADMIN', 'STAFF', 'CUSTOMER')),
+    NgayTao DATETIME DEFAULT GETDATE(),
+    TrangThai VARCHAR(10) NOT NULL DEFAULT 'ACTIVE' CHECK (TrangThai IN ('ACTIVE', 'LOCKED'))
 );
 GO
 
@@ -30,10 +28,10 @@ CREATE TABLE KhachHang (
     MaKhachHang INT PRIMARY KEY IDENTITY(1,1),
     MaNguoiDung INT UNIQUE NOT NULL,
     HoTen NVARCHAR(100) NOT NULL,
-    SoCCCD VARCHAR(20) UNIQUE,
+    SoCCCD VARCHAR(12),
     Email VARCHAR(100),
-    SoDienThoai VARCHAR(15),
-    TrangThaiKYC VARCHAR(20) DEFAULT 'PENDING',
+    SoDienThoai VARCHAR(10),
+    TrangThaiKYC VARCHAR(10) NOT NULL DEFAULT 'NONE' CHECK (TrangThaiKYC IN ('NONE', 'PENDING', 'APPROVED', 'REJECTED')),
     FOREIGN KEY (MaNguoiDung) REFERENCES NguoiDung(MaNguoiDung)
 );
 GO
@@ -41,52 +39,148 @@ GO
 CREATE TABLE TaiKhoan (
     MaTaiKhoan INT PRIMARY KEY IDENTITY(1,1),
     MaKhachHang INT NOT NULL,
-    SoTaiKhoan VARCHAR(20) UNIQUE NOT NULL,
-    SoDu DECIMAL(18, 2) DEFAULT 0,
-    TrangThai VARCHAR(20) DEFAULT 'ACTIVE',
-    FOREIGN KEY (MaKhachHang) REFERENCES KhachHang(MaKhachHang)
-);
-GO
-
-CREATE TABLE NguoiThuHuong (
-    MaThuHuong INT PRIMARY KEY IDENTITY(1,1),
-    MaKhachHang INT NOT NULL,
-    TenGoiNho NVARCHAR(100),
-    SoTaiKhoanNguoiNhan VARCHAR(20) NOT NULL,
-    NganHang NVARCHAR(50) DEFAULT N'Nội bộ',
+    SoTaiKhoan VARCHAR(14) UNIQUE NOT NULL,
+    SoDu DECIMAL(15, 2) DEFAULT 0 CHECK (SoDu >= 0), 
+    TrangThai VARCHAR(10) NOT NULL DEFAULT 'ACTIVE' CHECK (TrangThai IN ('ACTIVE', 'LOCKED', 'CLOSED')),
     FOREIGN KEY (MaKhachHang) REFERENCES KhachHang(MaKhachHang)
 );
 GO
 
 CREATE TABLE GiaoDich (
     MaGiaoDich INT PRIMARY KEY IDENTITY(1,1),
-    TaiKhoanNguon INT NOT NULL,
-    TaiKhoanDich INT,
-    SoTien DECIMAL(18, 2) NOT NULL,
-    LoaiGiaoDich VARCHAR(20),
+    MaTaiKhoanGui INT NOT NULL,
+    MaTaiKhoanNhan INT NOT NULL,
+    SoTien DECIMAL(15, 2) NOT NULL CHECK (SoTien > 0),  
     NoiDung NVARCHAR(200),
-    ThoiGian DATETIME DEFAULT GETDATE(),
-    TrangThai VARCHAR(20) DEFAULT 'SUCCESS',
-    FOREIGN KEY (TaiKhoanNguon) REFERENCES TaiKhoan(MaTaiKhoan)
+    NgayGiaoDich DATETIME DEFAULT GETDATE(),
+    TrangThai VARCHAR(8) NOT NULL DEFAULT 'PENDING' CHECK (TrangThai IN ('PENDING', 'SUCCESS', 'FAILED')),
+    MaOTP VARCHAR(6),
+    ThoiHanOTP DATETIME,
+    FOREIGN KEY (MaTaiKhoanGui) REFERENCES TaiKhoan(MaTaiKhoan),
+    FOREIGN KEY (MaTaiKhoanNhan) REFERENCES TaiKhoan(MaTaiKhoan),
+    CHECK (MaTaiKhoanGui <> MaTaiKhoanNhan) 
 );
 GO
 
-CREATE TABLE HoaDon (
-    MaHoaDon INT PRIMARY KEY IDENTITY(1,1),
-    LoaiDichVu NVARCHAR(50),
-    MaKhachHangDichVu VARCHAR(50),
-    SoTien DECIMAL(18, 2) NOT NULL,
-    KyCuoc VARCHAR(20),
-    DaThanhToan BIT DEFAULT 0
-);
+
+CREATE INDEX IX_NguoiDung_VaiTro_TrangThai ON NguoiDung(VaiTro, TrangThai);  
+
+-- KhachHang: Index cho tim kiem va JOIN
+CREATE INDEX IX_KhachHang_TrangThaiKYC ON KhachHang(TrangThaiKYC);
+CREATE INDEX IX_KhachHang_SoCCCD ON KhachHang(SoCCCD);
+
+-- TaiKhoan: Index cho JOIN
+CREATE INDEX IX_TaiKhoan_MaKhachHang ON TaiKhoan(MaKhachHang);
+CREATE INDEX IX_TaiKhoan_TrangThai ON TaiKhoan(TrangThai);
+
+-- GiaoDich: Index cho truy van lich su va filter
+CREATE INDEX IX_GiaoDich_TrangThai ON GiaoDich(TrangThai);
+CREATE INDEX IX_GiaoDich_NgayGiaoDich ON GiaoDich(NgayGiaoDich DESC);
+CREATE INDEX IX_GiaoDich_MaTaiKhoanGui_NgayGiaoDich ON GiaoDich(MaTaiKhoanGui, NgayGiaoDich DESC);  -- Composite
+CREATE INDEX IX_GiaoDich_MaTaiKhoanNhan_NgayGiaoDich ON GiaoDich(MaTaiKhoanNhan, NgayGiaoDich DESC);  -- Composite
 GO
 
-CREATE TABLE ThanhToan (
-    MaThanhToan INT PRIMARY KEY IDENTITY(1,1),
-    MaGiaoDich INT NOT NULL,
-    MaHoaDon INT NOT NULL,
-    NgayThanhToan DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (MaGiaoDich) REFERENCES GiaoDich(MaGiaoDich),
-    FOREIGN KEY (MaHoaDon) REFERENCES HoaDon(MaHoaDon)
-);
+-- FUNCTION: TAO SO TAI KHOAN TU DONG
+CREATE FUNCTION dbo.FN_TaoSoTaiKhoan()
+RETURNS VARCHAR(14)
+AS
+BEGIN
+    DECLARE @SoTaiKhoan VARCHAR(14);
+    DECLARE @MaTaiKhoanMax INT;
+    
+    -- Lay MaTaiKhoan lon nhat (tranh trung khi xoa tai khoan)
+    SELECT @MaTaiKhoanMax = ISNULL(MAX(MaTaiKhoan), 0) FROM TaiKhoan;
+    
+    -- Tang len 1 de tao so moi
+    SET @MaTaiKhoanMax = @MaTaiKhoanMax + 1;
+    
+    -- Format: 10 + 12 chu so (VD: 10000000000001)
+    SET @SoTaiKhoan = '10' + RIGHT('000000000000' + CAST(@MaTaiKhoanMax AS VARCHAR), 12);
+    
+    RETURN @SoTaiKhoan;
+END
 GO
+
+-- STORED PROCEDURE: CHUYEN TIEN AN TOAN (CO KIEM TRA TAI KHOAN NHAN)
+CREATE PROCEDURE SP_ChuyenTien
+    @MaTaiKhoanGui INT,
+    @MaTaiKhoanNhan INT,
+    @SoTien DECIMAL(15,2),
+    @NoiDung NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+    
+    BEGIN TRY
+        DECLARE @SoDuGui DECIMAL(15,2);
+        DECLARE @SoDuNhan DECIMAL(15,2);
+        DECLARE @MaGiaoDich INT;
+        
+        -- 1. Kiem tra so du TAI KHOAN GUI (UPDLOCK: khoa row de tranh race condition)
+        SELECT @SoDuGui = SoDu 
+        FROM TaiKhoan WITH (UPDLOCK)
+        WHERE MaTaiKhoan = @MaTaiKhoanGui;
+        
+        IF @SoDuGui IS NULL
+        BEGIN
+            RAISERROR('Tai khoan gui khong ton tai!', 16, 1);
+            RETURN;
+        END
+        
+        IF @SoDuGui < @SoTien
+        BEGIN
+            RAISERROR('So du khong du!', 16, 1);
+            RETURN;
+        END
+        
+        -- 2. Kiem tra TAI KHOAN NHAN co ton tai khong (UPDLOCK de dam bao ton tai)
+        SELECT @SoDuNhan = SoDu 
+        FROM TaiKhoan WITH (UPDLOCK)
+        WHERE MaTaiKhoan = @MaTaiKhoanNhan;
+        
+        IF @SoDuNhan IS NULL
+        BEGIN
+            RAISERROR('Tai khoan nhan khong ton tai!', 16, 1);
+            RETURN;
+        END
+        
+        -- 3. Tru tien tai khoan gui
+        UPDATE TaiKhoan 
+        SET SoDu = SoDu - @SoTien
+        WHERE MaTaiKhoan = @MaTaiKhoanGui;
+        
+        -- 4. Cong tien tai khoan nhan
+        UPDATE TaiKhoan 
+        SET SoDu = SoDu + @SoTien
+        WHERE MaTaiKhoan = @MaTaiKhoanNhan;
+        
+        -- 5. Luu giao dich SUCCESS
+        INSERT INTO GiaoDich (MaTaiKhoanGui, MaTaiKhoanNhan, SoTien, NoiDung, TrangThai, NgayGiaoDich)
+        VALUES (@MaTaiKhoanGui, @MaTaiKhoanNhan, @SoTien, @NoiDung, 'SUCCESS', GETDATE());
+        
+        SET @MaGiaoDich = SCOPE_IDENTITY();
+        
+        COMMIT TRANSACTION;
+        
+        -- Tra ve ket qua thanh cong
+        SELECT 
+            'SUCCESS' AS Result, 
+            @MaGiaoDich AS MaGiaoDich,
+            'Chuyen tien thanh cong!' AS Message;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        
+        -- Tra ve loi
+        SELECT 
+            'FAILED' AS Result,
+            NULL AS MaGiaoDich,
+            ERROR_MESSAGE() AS Message;
+    END CATCH
+END
+GO
+
+
+
+
