@@ -155,5 +155,80 @@ namespace BLL.Services
                 throw;
             }
         }
+
+        /// <summary>
+        /// Xác nhận OTP và thực hiện chuyển tiền
+        /// </summary>
+        public async Task<object> XacNhanOTPVaChuyenTienAsync(int maGiaoDich, string maOTP)
+        {
+            // Bước 1: Lấy giao dịch PENDING
+            var giaoDich = await _db.GiaoDich
+                .FirstOrDefaultAsync(x => x.MaGiaoDich == maGiaoDich);
+
+            if (giaoDich == null)
+            {
+                throw new Exception("Giao dịch không tồn tại!");
+            }
+
+            if (giaoDich.TrangThai != "PENDING")
+            {
+                throw new Exception($"Giao dịch đã được xử lý với trạng thái: {giaoDich.TrangThai}");
+            }
+
+            // Bước 2: Kiểm tra OTP
+            if (giaoDich.MaOTP != maOTP)
+            {
+                throw new Exception("Mã OTP không đúng!");
+            }
+
+            // Bước 3: Kiểm tra thời hạn OTP
+            if (DateTime.Now > giaoDich.ThoiHanOTP)
+            {
+                // Cập nhật trạng thái giao dịch thành FAILED
+                giaoDich.TrangThai = "FAILED";
+                await _db.SaveChangesAsync();
+                throw new Exception("Mã OTP đã hết hạn!");
+            }
+
+            // Bước 4: Gọi Stored Procedure chuyển tiền
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                // Thực hiện chuyển tiền
+                await _db.Database.ExecuteSqlRawAsync(
+                    "EXEC SP_ChuyenTien @p0, @p1, @p2, @p3",
+                    giaoDich.MaTaiKhoanGui,
+                    giaoDich.MaTaiKhoanNhan,
+                    giaoDich.SoTien,
+                    giaoDich.NoiDung ?? ""
+                );
+
+                // Bước 5: Cập nhật trạng thái giao dịch cũ thành SUCCESS
+                giaoDich.TrangThai = "SUCCESS";
+                giaoDich.NgayGiaoDich = DateTime.Now;
+                await _db.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return new
+                {
+                    ketQua = "SUCCESS",
+                    thongBao = "Chuyển tiền thành công!",
+                    maGiaoDich = giaoDich.MaGiaoDich,
+                    soTien = giaoDich.SoTien,
+                    ngayGiaoDich = giaoDich.NgayGiaoDich
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                // Cập nhật trạng thái giao dịch thành FAILED
+                giaoDich.TrangThai = "FAILED";
+                await _db.SaveChangesAsync();
+
+                throw new Exception($"Chuyển tiền thất bại: {ex.Message}");
+            }
+        }
     }
 }
