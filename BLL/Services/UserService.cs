@@ -75,6 +75,81 @@ namespace BLL.Services
             return new { tongSo = danhSach.Count, danhSach = danhSach };
         }
 
+        public async Task<NguoiDungDTO> LayChiTietNguoiDungAsync(int maNguoiDung)
+        {
+            await using var conn = await _db.GetOpenConnectionAsync();
+            
+            var query = @"
+                SELECT 
+                    nd.MaNguoiDung,
+                    nd.TenDangNhap,
+                    nd.VaiTro,
+                    nd.TrangThai,
+                    nd.NgayTao,
+                    CASE 
+                        WHEN kh.HoTen IS NOT NULL THEN kh.HoTen
+                        WHEN nd.VaiTro = 'ADMIN' THEN N'Quản Trị Viên'
+                        ELSE N'Nhân Viên'
+                    END AS HoTen,
+                    kh.Email,
+                    kh.SoDienThoai,
+                    kh.SoCCCD,
+                    kh.TrangThaiKYC
+                FROM NguoiDung nd
+                LEFT JOIN KhachHang kh ON nd.MaNguoiDung = kh.MaNguoiDung
+                WHERE nd.MaNguoiDung = @MaNguoiDung";
+
+            var cmd = new SqlCommand(query, conn);
+            cmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            
+            if (await reader.ReadAsync())
+            {
+                return new NguoiDungDTO
+                {
+                    MaNguoiDung = reader.GetInt32(0),
+                    TenDangNhap = reader.GetString(1),
+                    VaiTro = reader.GetString(2),
+                    TrangThai = reader.GetString(3),
+                    NgayTao = reader.GetDateTime(4),
+                    HoTen = reader.GetString(5),
+                    Email = reader.IsDBNull(6) ? null : reader.GetString(6)
+                };
+            }
+
+            throw new Exception("Không tìm thấy người dùng.");
+        }
+
+        public async Task<AdminDashboardDTO> LayThongKeDashboardAsync()
+        {
+            await using var conn = await _db.GetOpenConnectionAsync();
+            
+            var dashboard = new AdminDashboardDTO();
+
+            // Tổng số người dùng
+            var cmdUsers = new SqlCommand("SELECT COUNT(*) FROM NguoiDung", conn);
+            dashboard.TongNguoiDung = (int)await cmdUsers.ExecuteScalarAsync();
+
+            // Tổng khách hàng
+            var cmdCustomers = new SqlCommand("SELECT COUNT(*) FROM KhachHang", conn);
+            dashboard.TongKhachHang = (int)await cmdCustomers.ExecuteScalarAsync();
+
+            // KYC chờ duyệt
+            var cmdKYC = new SqlCommand("SELECT COUNT(*) FROM KhachHang WHERE TrangThaiKYC = 'PENDING'", conn);
+            dashboard.SoKYCChoDuyet = (int)await cmdKYC.ExecuteScalarAsync();
+
+            // Tổng giao dịch thành công
+            var cmdTransactions = new SqlCommand("SELECT COUNT(*) FROM GiaoDich WHERE TrangThai = 'SUCCESS'", conn);
+            dashboard.TongGiaoDich = (int)await cmdTransactions.ExecuteScalarAsync();
+
+            // Tổng số tiền giao dịch
+            var cmdAmount = new SqlCommand("SELECT ISNULL(SUM(SoTien), 0) FROM GiaoDich WHERE TrangThai = 'SUCCESS'", conn);
+            dashboard.TongSoTienGiaoDich = (decimal)await cmdAmount.ExecuteScalarAsync();
+
+            return dashboard;
+        }
+
         public async Task<NguoiDungDTO> TaoNguoiDungHeThongAsync(string tenDangNhap, string matKhau, string vaiTro)
         {
             await using var conn = await _db.GetOpenConnectionAsync();

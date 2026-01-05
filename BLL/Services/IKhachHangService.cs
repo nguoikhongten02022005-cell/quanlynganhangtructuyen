@@ -1,6 +1,7 @@
 using Model.Requests;
 using Model.DTOs;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace BLL.Services
 {
@@ -11,5 +12,6 @@ namespace BLL.Services
         Task<TaiKhoanDTO> LayThongTinTaiKhoanAsync(int maNguoiDung);
         Task<object> LayDanhSachKycPendingAsync();
         Task<object> DuyetKYCAsync(int customerId, string status, string? reason = null);
+        Task<List<KYCPendingDTO>> LayDanhSachKYCChoDuyetAsync();
     }
 }
