@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác Minh Danh Tính (KYC)</title>
+    <link rel="stylesheet" href="../css/customer-kyc.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Xác Minh Danh Tính (KYC)</h1>
+        
+        <div id="thongBao" class="thong-bao"></div>
+        
+        <form id="formKyc" class="kyc-form">
+            <div class="form-group">
+                <label for="soCMND">Số CMND/CCCD: <span class="required">*</span></label>
+                <input type="text" id="soCMND" name="soCMND" placeholder="Nhập số CMND/CCCD (12 số)" required>
+                <small>Nhập đúng 12 chữ số</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="anhCMNDTruoc">Ảnh CMND/CCCD mặt trước: <span class="required">*</span></label>
+                <input type="text" id="anhCMNDTruoc" name="anhCMNDTruoc" placeholder="Nhập tên file ảnh mặt trước" required>
+                <small>Ví dụ: front.jpg</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="anhCMNDSau">Ảnh CMND/CCCD mặt sau: <span class="required">*</span></label>
+                <input type="text" id="anhCMNDSau" name="anhCMNDSau" placeholder="Nhập tên file ảnh mặt sau" required>
+                <small>Ví dụ: back.jpg</small>
+            </div>
+            
+            <div class="actions">
+                <button type="button" onclick="quayLai()" class="btn-secondary">Quay lại</button>
+                <button type="submit" class="btn-primary">Gửi xác minh</button>
+            </div>
+        </form>
+    </div>
+    
+    <script src="../js/customer-kyc.js"></script>
+</body>
+</html>
