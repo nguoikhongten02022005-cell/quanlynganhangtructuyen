@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCB Digibank - Trang chủ</title>
+    <link rel="stylesheet" href="../css/customer-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>VCB<span>Digibank</span></h1>
+            </div>
+            <div class="user-info">
+                <span class="welcome">Xin chào, <strong id="userName">Khách hàng</strong></span>
+                <button onclick="dangXuat()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </header>
+
+        <!-- Menu điều hướng -->
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-item active">
+                <i class="fas fa-home"></i> Trang chủ
+            </a>
+            <a href="customer-profile.html" class="nav-item">
+                <i class="fas fa-user"></i> Thông tin cá nhân
+            </a>
+            <a href="customer-kyc.html" class="nav-item">
+                <i class="fas fa-id-card"></i> Xác minh KYC
+            </a>
+            <a href="change-password.html" class="nav-item">
+                <i class="fas fa-key"></i> Đổi mật khẩu
+            </a>
+        </nav>
+
+        <!-- Nội dung chính -->
+        <main class="main-content">
+            <h2>Trang chủ khách hàng</h2>
+            
+            <div class="cards">
+                <!-- Card Thông tin tài khoản -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-wallet"></i>
+                        <h3>Tài khoản ngân hàng</h3>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Số tài khoản:</strong> <span id="soTaiKhoan">---</span></p>
+                        <p><strong>Số dư:</strong> <span id="soDu" class="balance">0 VNĐ</span></p>
+                        <p><strong>Trạng thái:</strong> <span id="trangThai">---</span></p>
+                    </div>
+                </div>
+
+                <!-- Card Profile -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-user-circle"></i>
+                        <h3>Thông tin cá nhân</h3>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Họ tên:</strong> <span id="hoTen">---</span></p>
+                        <p><strong>Email:</strong> <span id="email">---</span></p>
+                        <p><strong>SĐT:</strong> <span id="soDienThoai">---</span></p>
+                        <p><strong>Trạng thái KYC:</strong> <span id="trangThaiKyc">---</span></p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="customer-profile.html" class="btn-link">Xem chi tiết →</a>
+                    </div>
+                </div>
+
+                <!-- Card Hướng dẫn -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h3>Hướng dẫn sử dụng</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="guide-list">
+                            <li>✓ Xem thông tin tài khoản và số dư</li>
+                            <li>✓ Cập nhật thông tin cá nhân</li>
+                            <li>✓ Gửi yêu cầu xác minh KYC</li>
+                            <li>✓ Đổi mật khẩu bảo mật</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 VCB Digibank - Ngân hàng trực tuyến</p>
+        </footer>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
