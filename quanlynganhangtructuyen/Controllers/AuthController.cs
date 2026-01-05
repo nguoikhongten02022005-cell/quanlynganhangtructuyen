@@ -2,10 +2,10 @@ using BLL.Services;
 using DAL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
-using Model;
 using Model.Requests;
+using Model.DTOs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -17,7 +17,7 @@ namespace quanlynganhangtructuyen.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly NganHangDAL _db; // Vẫn cần để lấy tên khách hàng khi login (tạm thời)
+        private readonly NganHangDAL _db;
         private readonly IConfiguration _config;
 
         public AuthController(IAuthService authService, NganHangDAL db, IConfiguration config)
@@ -67,15 +67,11 @@ namespace quanlynganhangtructuyen.Controllers
 
                 if (nguoiDung.VaiTro == "CUSTOMER")
                 {
-                    var khach = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == nguoiDung.MaNguoiDung);
-                    if (khach == null)
-                    {
-                        hoTenHienThi = "Khách hàng (Lỗi hồ sơ)";
-                    }
-                    else
-                    {
-                        hoTenHienThi = khach.HoTen;
-                    }
+                    await using var conn = await _db.GetOpenConnectionAsync();
+                    var cmd = new SqlCommand("SELECT HoTen FROM KhachHang WHERE MaNguoiDung = @MaNguoiDung", conn);
+                    cmd.Parameters.AddWithValue("@MaNguoiDung", nguoiDung.MaNguoiDung);
+                    var hoTen = await cmd.ExecuteScalarAsync() as string;
+                    hoTenHienThi = hoTen ?? "Khách hàng (Lỗi hồ sơ)";
                 }
                 else if (nguoiDung.VaiTro == "ADMIN")
                 {
@@ -126,7 +122,7 @@ namespace quanlynganhangtructuyen.Controllers
         }
 
 
-        private string TaoJwtToken(NguoiDung nguoiDung, string hoTen)
+        private string TaoJwtToken(NguoiDungDTO nguoiDung, string hoTen)
         {
             var key = _config["Jwt:Key"] ?? throw new Exception("Thiếu cấu hình Jwt:Key");
             var issuer = _config["Jwt:Issuer"];

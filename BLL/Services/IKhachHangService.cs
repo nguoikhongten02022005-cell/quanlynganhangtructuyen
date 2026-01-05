@@ -1,4 +1,5 @@
 using Model.Requests;
+using Model.DTOs;
 using System.Threading.Tasks;
 
 namespace BLL.Services
@@ -6,8 +7,8 @@ namespace BLL.Services
     public interface IKhachHangService
     {
         Task<object> GuiYeuCauKycAsync(int maNguoiDung, KycRequest request);
-        Task<object> LayThongTinHoSoAsync(int maNguoiDung);
-        Task<object> LayThongTinTaiKhoanAsync(int maNguoiDung);
+        Task<KhachHangProfileDTO> LayThongTinHoSoAsync(int maNguoiDung);
+        Task<TaiKhoanDTO> LayThongTinTaiKhoanAsync(int maNguoiDung);
         Task<object> LayDanhSachKycPendingAsync();
         Task<object> DuyetKYCAsync(int customerId, string status, string? reason = null);
     }

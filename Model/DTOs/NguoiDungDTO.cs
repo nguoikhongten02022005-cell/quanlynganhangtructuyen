@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
+using System;
 
-namespace Model
+namespace Model.DTOs
 {
-    public class NguoiDung
+    public class NguoiDungDTO
     {
-        [Key]
         public int MaNguoiDung { get; set; }
         public string TenDangNhap { get; set; } = "";
         public string MatKhauHash { get; set; } = "";
         public string VaiTro { get; set; } = "CUSTOMER";
-        public DateTime NgayTao { get; set; }
         public string TrangThai { get; set; } = "ACTIVE";
-
+        public DateTime NgayTao { get; set; }
+        public string HoTen { get; set; }
+        public string Email { get; set; }
     }
 }
-
