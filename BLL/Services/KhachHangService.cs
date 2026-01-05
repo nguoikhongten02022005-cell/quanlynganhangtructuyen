@@ -1,8 +1,10 @@
 using DAL;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Model.Requests;
+using Model.DTOs;
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace BLL.Services
 {
@@ -15,162 +17,167 @@ namespace BLL.Services
             _db = db;
         }
 
-        public async Task<object> LayThongTinHoSoAsync(int maNguoiDung)
+        public async Task<KhachHangProfileDTO> LayThongTinHoSoAsync(int maNguoiDung)
         {
-            var khachHang = await _db.KhachHang
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
-
-            if (khachHang == null)
+            await using var conn = await _db.GetOpenConnectionAsync();
+            var cmd = new SqlCommand("SELECT HoTen, Email, SoDienThoai, SoCCCD, TrangThaiKYC FROM KhachHang WHERE MaNguoiDung = @MaNguoiDung", conn);
+            cmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
+            
+            await using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync())
             {
                 throw new Exception("Không tìm thấy hồ sơ khách hàng.");
             }
 
-            return new
+            return new KhachHangProfileDTO
             {
-                hoTen = khachHang.HoTen,
-                email = khachHang.Email,
-                soDienThoai = khachHang.SoDienThoai,
-                soCCCD = khachHang.SoCCCD,
-                trangThaiKYC = khachHang.TrangThaiKYC
+                HoTen = reader.GetString(0),
+                Email = reader.IsDBNull(1) ? null : reader.GetString(1),
+                SoDienThoai = reader.IsDBNull(2) ? null : reader.GetString(2),
+                SoCCCD = reader.IsDBNull(3) ? null : reader.GetString(3),
+                TrangThaiKYC = reader.GetString(4)
             };
         }
 
         public async Task<object> GuiYeuCauKycAsync(int maNguoiDung, KycRequest request)
         {
-            // Kiểm tra xem khách hàng có tồn tại không
-            var khachHang = await _db.KhachHang
-                .FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
-
-            if (khachHang == null)
-            {
-                throw new Exception("Không tìm thấy hồ sơ khách hàng.");
-            }
-
-            // Kiểm tra số CCCD có hợp lệ không (12 hoặc 13 số)
             if (string.IsNullOrWhiteSpace(request.SoCCCD) ||
                 (request.SoCCCD.Length != 12 && request.SoCCCD.Length != 13))
             {
                 throw new Exception("Số CCCD phải có 12 hoặc 13 chữ số.");
             }
 
-            // Kiểm tra xem số CCCD đã được sử dụng chưa
-            var daTonTai = await _db.KhachHang
-                .AnyAsync(x => x.SoCCCD == request.SoCCCD && x.MaNguoiDung != maNguoiDung);
-
-            if (daTonTai)
+            await using var conn = await _db.GetOpenConnectionAsync();
+            
+            // Kiểm tra CCCD đã được sử dụng chưa
+            var checkCmd = new SqlCommand("SELECT COUNT(*) FROM KhachHang WHERE SoCCCD = @SoCCCD AND MaNguoiDung != @MaNguoiDung", conn);
+            checkCmd.Parameters.AddWithValue("@SoCCCD", request.SoCCCD);
+            checkCmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
+            
+            var count = (int)await checkCmd.ExecuteScalarAsync();
+            if (count > 0)
             {
                 throw new Exception("Số CCCD này đã được sử dụng bởi tài khoản khác.");
             }
 
-            // Cập nhật thông tin CCCD và trạng thái KYC
-            khachHang.SoCCCD = request.SoCCCD;
-            khachHang.TrangThaiKYC = "PENDING"; // Chờ duyệt
-
-            await _db.SaveChangesAsync();
-
-            return new
-            {
-                thongBao = "Gửi yêu cầu KYC thành công. Vui lòng chờ nhân viên ngân hàng duyệt.",
-                soCCCD = khachHang.SoCCCD,
-                trangThaiKYC = khachHang.TrangThaiKYC
-            };
-        }
-
-        public async Task<object> LayThongTinTaiKhoanAsync(int maNguoiDung)
-        {
-            // Tìm khách hàng từ người dùng
-            var khachHang = await _db.KhachHang
-                .FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
-
-            if (khachHang == null)
+            // Cập nhật CCCD và trạng thái KYC
+            var updateCmd = new SqlCommand("UPDATE KhachHang SET SoCCCD = @SoCCCD, TrangThaiKYC = 'PENDING' WHERE MaNguoiDung = @MaNguoiDung", conn);
+            updateCmd.Parameters.AddWithValue("@SoCCCD", request.SoCCCD);
+            updateCmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
+            
+            var rowsAffected = await updateCmd.ExecuteNonQueryAsync();
+            if (rowsAffected == 0)
             {
                 throw new Exception("Không tìm thấy hồ sơ khách hàng.");
             }
 
-            // Tìm tài khoản của khách hàng
-            var taiKhoan = await _db.TaiKhoan
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.MaKhachHang == khachHang.MaKhachHang);
+            return new
+            {
+                thongBao = "Gửi yêu cầu KYC thành công. Vui lòng chờ nhân viên ngân hàng duyệt.",
+                soCCCD = request.SoCCCD,
+                trangThaiKYC = "PENDING"
+            };
+        }
 
-            if (taiKhoan == null)
+        public async Task<TaiKhoanDTO> LayThongTinTaiKhoanAsync(int maNguoiDung)
+        {
+            await using var conn = await _db.GetOpenConnectionAsync();
+            var cmd = new SqlCommand(@"
+                SELECT tk.SoTaiKhoan, tk.SoDu, tk.TrangThai
+                FROM TaiKhoan tk
+                INNER JOIN KhachHang kh ON tk.MaKhachHang = kh.MaKhachHang
+                WHERE kh.MaNguoiDung = @MaNguoiDung", conn);
+            cmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
+            
+            await using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync())
             {
                 throw new Exception("Không tìm thấy tài khoản ngân hàng.");
             }
 
-            // Kiểm tra tài khoản có bị khóa không
-            if (taiKhoan.TrangThai != "ACTIVE")
+            var trangThai = reader.GetString(2);
+            if (trangThai != "ACTIVE")
             {
                 throw new Exception("Tài khoản ngân hàng đã bị khóa.");
             }
 
-            return new
+            return new TaiKhoanDTO
             {
-                soTaiKhoan = taiKhoan.SoTaiKhoan,
-                soDu = taiKhoan.SoDu,
-                trangThai = taiKhoan.TrangThai,
-                hoTen = khachHang.HoTen
+                SoTaiKhoan = reader.GetString(0),
+                SoDu = reader.GetDecimal(1),
+                TrangThai = trangThai
             };
         }
 
         public async Task<object> LayDanhSachKycPendingAsync()
         {
-            var danhSachKhachHang = await _db.KhachHang
-                .AsNoTracking()
-                .Where(x => x.TrangThaiKYC == "PENDING")
-                .Select(x => new
+            await using var conn = await _db.GetOpenConnectionAsync();
+            var cmd = new SqlCommand("SELECT MaKhachHang, MaNguoiDung, HoTen, Email, SoDienThoai, SoCCCD, TrangThaiKYC FROM KhachHang WHERE TrangThaiKYC = 'PENDING'", conn);
+            
+            var danhSach = new List<object>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            
+            while (await reader.ReadAsync())
+            {
+                danhSach.Add(new
                 {
-                    maKhachHang = x.MaKhachHang,
-                    maNguoiDung = x.MaNguoiDung,
-                    hoTen = x.HoTen,
-                    email = x.Email,
-                    soDienThoai = x.SoDienThoai,
-                    soCCCD = x.SoCCCD,
-                    trangThaiKYC = x.TrangThaiKYC
-                })
-                .ToListAsync();
+                    maKhachHang = reader.GetInt32(0),
+                    maNguoiDung = reader.GetInt32(1),
+                    hoTen = reader.GetString(2),
+                    email = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    soDienThoai = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    soCCCD = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    trangThaiKYC = reader.GetString(6)
+                });
+            }
 
             return new
             {
-                danhSach = danhSachKhachHang,
-                tongSo = danhSachKhachHang.Count
+                danhSach = danhSach,
+                tongSo = danhSach.Count
             };
         }
 
         public async Task<object> DuyetKYCAsync(int customerId, string status, string? reason = null)
         {
-            // Tìm khách hàng theo mã người dùng
-            var khachHang = await _db.KhachHang.FirstOrDefaultAsync(x => x.MaNguoiDung == customerId);
-
-            if (khachHang == null)
-            {
-                throw new Exception("Không tìm thấy khách hàng.");
-            }
-
-            // Kiểm tra trạng thái KYC hiện tại
-            if (khachHang.TrangThaiKYC != "PENDING")
-            {
-                throw new Exception("Hồ sơ KYC không ở trạng thái chờ duyệt.");
-            }
-
-            // Xác thực trạng thái mới
             if (status != "APPROVED" && status != "REJECTED")
             {
                 throw new Exception("Trạng thái không hợp lệ. Chỉ chấp nhận APPROVED hoặc REJECTED.");
             }
 
-            // Cập nhật trạng thái KYC
-            khachHang.TrangThaiKYC = status;
+            await using var conn = await _db.GetOpenConnectionAsync();
+            
+            // Kiểm tra trạng thái hiện tại
+            var checkCmd = new SqlCommand("SELECT MaKhachHang, TrangThaiKYC FROM KhachHang WHERE MaNguoiDung = @MaNguoiDung", conn);
+            checkCmd.Parameters.AddWithValue("@MaNguoiDung", customerId);
+            
+            await using var reader = await checkCmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync())
+            {
+                throw new Exception("Không tìm thấy khách hàng.");
+            }
 
-            // Lưu thay đổi vào cơ sở dữ liệu
-            await _db.SaveChangesAsync();
+            var maKhachHang = reader.GetInt32(0);
+            var trangThaiHienTai = reader.GetString(1);
+            await reader.CloseAsync();
 
-            // Trả về kết quả
+            if (trangThaiHienTai != "PENDING")
+            {
+                throw new Exception("Hồ sơ KYC không ở trạng thái chờ duyệt.");
+            }
+
+            // Cập nhật trạng thái
+            var updateCmd = new SqlCommand("UPDATE KhachHang SET TrangThaiKYC = @TrangThaiKYC WHERE MaNguoiDung = @MaNguoiDung", conn);
+            updateCmd.Parameters.AddWithValue("@TrangThaiKYC", status);
+            updateCmd.Parameters.AddWithValue("@MaNguoiDung", customerId);
+            
+            await updateCmd.ExecuteNonQueryAsync();
+
             return new
             {
                 thongBao = status == "APPROVED" ? "Duyệt KYC thành công." : "Từ chối KYC thành công.",
-                maKhachHang = khachHang.MaKhachHang,
-                maNguoiDung = khachHang.MaNguoiDung,
+                maKhachHang = maKhachHang,
+                maNguoiDung = customerId,
                 trangThaiMoi = status,
                 lyDo = reason
             };

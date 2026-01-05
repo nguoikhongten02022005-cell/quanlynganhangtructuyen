@@ -1,6 +1,8 @@
 using DAL;
-using Microsoft.EntityFrameworkCore;
-using Model;
+using Microsoft.Data.SqlClient;
+using Model.DTOs;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace BLL.Services
@@ -16,96 +18,121 @@ namespace BLL.Services
 
         public async Task<object> GetUsersAsync(string? role, string? status)
         {
-            var query = _db.NguoiDung.AsNoTracking().AsQueryable();
-
+            await using var conn = await _db.GetOpenConnectionAsync();
+            
+            var whereClause = "WHERE 1=1";
             if (!string.IsNullOrEmpty(role))
             {
-                query = query.Where(u => u.VaiTro == role.ToUpperInvariant());
+                whereClause += " AND nd.VaiTro = @Role";
             }
-
             if (!string.IsNullOrEmpty(status))
             {
-                query = query.Where(u => u.TrangThai == status.ToUpperInvariant());
+                whereClause += " AND nd.TrangThai = @Status";
             }
 
-            var usersData = await query
-                .GroupJoin(_db.KhachHang, 
-                    u => u.MaNguoiDung, 
-                    k => k.MaNguoiDung, 
-                    (u, k) => new { u, k = k.FirstOrDefault() })
-                .Select(x => new
-                {
-                    maNguoiDung = x.u.MaNguoiDung,
-                    tenDangNhap = x.u.TenDangNhap,
-                    vaiTro = x.u.VaiTro,
-                    trangThai = x.u.TrangThai,
-                    hoTen = x.k != null ? x.k.HoTen : (x.u.VaiTro == "ADMIN" ? "Quản Trị Viên" : "Nhân Viên"),
-                    email = x.k != null ? x.k.Email : null,
-                    soDienThoai = x.k != null ? x.k.SoDienThoai : null,
-                    ngayTao = x.u.NgayTao
-                })
-                .ToListAsync();
+            var query = $@"
+                SELECT 
+                    nd.MaNguoiDung,
+                    nd.TenDangNhap,
+                    nd.VaiTro,
+                    nd.TrangThai,
+                    CASE 
+                        WHEN kh.HoTen IS NOT NULL THEN kh.HoTen
+                        WHEN nd.VaiTro = 'ADMIN' THEN N'Quản Trị Viên'
+                        ELSE N'Nhân Viên'
+                    END AS HoTen,
+                    kh.Email
+                FROM NguoiDung nd
+                LEFT JOIN KhachHang kh ON nd.MaNguoiDung = kh.MaNguoiDung
+                {whereClause}";
 
-            return new { tongSo = usersData.Count, danhSach = usersData };
+            var cmd = new SqlCommand(query, conn);
+            if (!string.IsNullOrEmpty(role))
+            {
+                cmd.Parameters.AddWithValue("@Role", role.ToUpperInvariant());
+            }
+            if (!string.IsNullOrEmpty(status))
+            {
+                cmd.Parameters.AddWithValue("@Status", status.ToUpperInvariant());
+            }
+
+            var danhSach = new List<NguoiDungDTO>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            
+            while (await reader.ReadAsync())
+            {
+                danhSach.Add(new NguoiDungDTO
+                {
+                    MaNguoiDung = reader.GetInt32(0),
+                    TenDangNhap = reader.GetString(1),
+                    VaiTro = reader.GetString(2),
+                    TrangThai = reader.GetString(3),
+                    HoTen = reader.GetString(4),
+                    Email = reader.IsDBNull(5) ? null : reader.GetString(5)
+                });
+            }
+
+            return new { tongSo = danhSach.Count, danhSach = danhSach };
         }
 
-        /// <summary>
-        /// Hàm tạo tài khoản dành cho Admin hoặc Staff (Không cần tạo thông tin Khách hàng)
-        /// </summary>
-        public async Task<Model.NguoiDung> TaoNguoiDungHeThongAsync(string tenDangNhap, string matKhau, string vaiTro)
+        public async Task<NguoiDungDTO> TaoNguoiDungHeThongAsync(string tenDangNhap, string matKhau, string vaiTro)
         {
-            // 1. Kiểm tra xem tên đăng nhập đã tồn tại chưa
-            bool daTonTai = await _db.NguoiDung.AnyAsync(u => u.TenDangNhap == tenDangNhap);
-            if (daTonTai)
+            await using var conn = await _db.GetOpenConnectionAsync();
+            
+            // Kiểm tra trùng
+            var checkCmd = new SqlCommand("SELECT COUNT(*) FROM NguoiDung WHERE TenDangNhap = @TenDangNhap", conn);
+            checkCmd.Parameters.AddWithValue("@TenDangNhap", tenDangNhap);
+            var count = (int)await checkCmd.ExecuteScalarAsync();
+            
+            if (count > 0)
             {
-                // Ném ra lỗi để Controller bắt được
                 throw new Exception("Tên đăng nhập đã tồn tại.");
             }
 
-            // 2. Tạo đối tượng người dùng mới
-            var nguoiDungMoi = new NguoiDung
+            // Tạo người dùng
+            var insertCmd = new SqlCommand(@"
+                INSERT INTO NguoiDung (TenDangNhap, MatKhauHash, VaiTro, TrangThai, NgayTao)
+                OUTPUT INSERTED.MaNguoiDung
+                VALUES (@TenDangNhap, @MatKhauHash, @VaiTro, @TrangThai, @NgayTao)", conn);
+            
+            insertCmd.Parameters.AddWithValue("@TenDangNhap", tenDangNhap);
+            insertCmd.Parameters.AddWithValue("@MatKhauHash", BCrypt.Net.BCrypt.HashPassword(matKhau));
+            insertCmd.Parameters.AddWithValue("@VaiTro", vaiTro);
+            insertCmd.Parameters.AddWithValue("@TrangThai", "ACTIVE");
+            insertCmd.Parameters.AddWithValue("@NgayTao", DateTime.Now);
+            
+            var maNguoiDung = (int)await insertCmd.ExecuteScalarAsync();
+
+            return new NguoiDungDTO
             {
+                MaNguoiDung = maNguoiDung,
                 TenDangNhap = tenDangNhap,
-                // Mã hóa mật khẩu trước khi lưu
-                MatKhauHash = BCrypt.Net.BCrypt.HashPassword(matKhau),
-                VaiTro = vaiTro, // ADMIN hoặc STAFF
+                VaiTro = vaiTro,
                 TrangThai = "ACTIVE",
                 NgayTao = DateTime.Now
             };
-
-            // 3. Lưu vào Database
-            _db.NguoiDung.Add(nguoiDungMoi);
-            await _db.SaveChangesAsync();
-
-            return nguoiDungMoi;
         }
 
         public async Task KhoaMoKhoaTaiKhoanAsync(int maNguoiDung, bool khoa)
         {
-            // 1. Tìm người dùng
-            var nguoiDung = await _db.NguoiDung.FirstOrDefaultAsync(u => u.MaNguoiDung == maNguoiDung);
-
-            // 2. Kiểm tra tồn tại
-            if (nguoiDung == null)
+            await using var conn = await _db.GetOpenConnectionAsync();
+            
+            // Kiểm tra tồn tại
+            var checkCmd = new SqlCommand("SELECT COUNT(*) FROM NguoiDung WHERE MaNguoiDung = @MaNguoiDung", conn);
+            checkCmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
+            var count = (int)await checkCmd.ExecuteScalarAsync();
+            
+            if (count == 0)
             {
                 throw new Exception("Người dùng không tồn tại.");
             }
 
-            // 3. Không cho phép khóa chính mình hoặc khóa Admin khác nếu không đủ quyền (Logic đơn giản hóa: Admin nào cũng khóa được)
-            // Tuy nhiên, nên chặn khóa Admin chính (ví dụ ID = 1) nếu cần thiết.
-
-            // 4. Cập nhật trạng thái
-            if (khoa)
-            {
-                nguoiDung.TrangThai = "LOCKED";
-            }
-            else
-            {
-                nguoiDung.TrangThai = "ACTIVE";
-            }
-
-            // 5. Lưu thay đổi
-            await _db.SaveChangesAsync();
+            // Cập nhật trạng thái
+            var updateCmd = new SqlCommand("UPDATE NguoiDung SET TrangThai = @TrangThai WHERE MaNguoiDung = @MaNguoiDung", conn);
+            updateCmd.Parameters.AddWithValue("@TrangThai", khoa ? "LOCKED" : "ACTIVE");
+            updateCmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
+            
+            await updateCmd.ExecuteNonQueryAsync();
         }
     }
 }

@@ -1,15 +1,26 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Model;
-using Model.Entities;
+﻿using System.Data;
+using Microsoft.Data.SqlClient;
 
 namespace DAL;
 
-public class NganHangDAL : DbContext
+public class NganHangDAL
 {
-    public NganHangDAL(DbContextOptions<NganHangDAL> options) : base(options) { }
+    private readonly string _connectionString;
 
-    public DbSet<NguoiDung> NguoiDung { get; set; } = null!;
-    public DbSet<KhachHang> KhachHang { get; set; } = null!;
-    public DbSet<TaiKhoan> TaiKhoan { get; set; } = null!;
-    public DbSet<GiaoDich> GiaoDich { get; set; } = null!;
+    public NganHangDAL(string connectionString)
+    {
+        _connectionString = connectionString;
+    }
+
+    public SqlConnection GetConnection()
+    {
+        return new SqlConnection(_connectionString);
+    }
+
+    public async Task<SqlConnection> GetOpenConnectionAsync()
+    {
+        var conn = new SqlConnection(_connectionString);
+        await conn.OpenAsync();
+        return conn;
+    }
 }
