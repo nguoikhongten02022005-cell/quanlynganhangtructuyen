@@ -12,5 +12,11 @@ namespace BLL.Services
 
         // Hàm khóa hoặc mở khóa tài khoản
         Task KhoaMoKhoaTaiKhoanAsync(int maNguoiDung, bool khoa);
+
+        // Lấy chi tiết người dùng
+        Task<NguoiDungDTO> LayChiTietNguoiDungAsync(int maNguoiDung);
+
+        // Lấy thống kê dashboard
+        Task<AdminDashboardDTO> LayThongKeDashboardAsync();
     }
 }

@@ -80,6 +80,23 @@ CREATE INDEX IX_GiaoDich_MaTaiKhoanGui_NgayGiaoDich ON GiaoDich(MaTaiKhoanGui, N
 CREATE INDEX IX_GiaoDich_MaTaiKhoanNhan_NgayGiaoDich ON GiaoDich(MaTaiKhoanNhan, NgayGiaoDich DESC);  -- Composite
 GO
 
+-- Bang ghi chu cua nhan vien (Staff Module)
+CREATE TABLE GhiChuKhachHang (
+    MaGhiChu INT PRIMARY KEY IDENTITY(1,1),
+    MaKhachHang INT NOT NULL,
+    MaNhanVien INT NOT NULL,
+    NoiDung NVARCHAR(1000) NOT NULL,
+    NgayTao DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (MaKhachHang) REFERENCES KhachHang(MaKhachHang),
+    FOREIGN KEY (MaNhanVien) REFERENCES NguoiDung(MaNguoiDung)
+);
+GO
+
+-- Index cho GhiChuKhachHang
+CREATE INDEX IX_GhiChuKhachHang_MaKhachHang ON GhiChuKhachHang(MaKhachHang);
+CREATE INDEX IX_GhiChuKhachHang_NgayTao ON GhiChuKhachHang(NgayTao DESC);
+GO
+
 -- FUNCTION: TAO SO TAI KHOAN TU DONG
 CREATE FUNCTION dbo.FN_TaoSoTaiKhoan()
 RETURNS VARCHAR(14)

@@ -138,6 +138,29 @@ namespace BLL.Services
             };
         }
 
+        public async Task<List<KYCPendingDTO>> LayDanhSachKYCChoDuyetAsync()
+        {
+            await using var conn = await _db.GetOpenConnectionAsync();
+            var cmd = new SqlCommand("SELECT MaKhachHang, HoTen, SoCCCD, Email, SoDienThoai FROM KhachHang WHERE TrangThaiKYC = 'PENDING' ORDER BY MaKhachHang DESC", conn);
+            
+            var danhSach = new List<KYCPendingDTO>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            
+            while (await reader.ReadAsync())
+            {
+                danhSach.Add(new KYCPendingDTO
+                {
+                    MaKhachHang = reader.GetInt32(0),
+                    HoTen = reader.GetString(1),
+                    SoCCCD = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    Email = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                    SoDienThoai = reader.IsDBNull(4) ? "" : reader.GetString(4)
+                });
+            }
+
+            return danhSach;
+        }
+
         public async Task<object> DuyetKYCAsync(int customerId, string status, string? reason = null)
         {
             if (status != "APPROVED" && status != "REJECTED")
