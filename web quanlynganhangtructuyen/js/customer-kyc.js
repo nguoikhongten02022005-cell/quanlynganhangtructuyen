@@ -77,8 +77,6 @@ async function xuLyGuiKyc(event) {
     
     // Lấy dữ liệu từ form
     const soCMND = document.getElementById('soCMND').value.trim();
-    const anhCMNDTruoc = document.getElementById('anhCMNDTruoc').value.trim();
-    const anhCMNDSau = document.getElementById('anhCMNDSau').value.trim();
     
     // Validate
     if (!kiemTraSoCMND(soCMND)) {
@@ -86,16 +84,9 @@ async function xuLyGuiKyc(event) {
         return;
     }
     
-    if (!anhCMNDTruoc || !anhCMNDSau) {
-        hienThiThongBao('Vui lòng nhập tên file ảnh CMND/CCCD!', 'loi');
-        return;
-    }
-    
-    // Tạo object dữ liệu gửi đi
+    // Tạo object dữ liệu gửi đi (chỉ có số CCCD)
     const duLieuKyc = {
-        soCCCD: soCMND,
-        anhCMNDTruoc: anhCMNDTruoc,
-        anhCMNDSau: anhCMNDSau
+        soCCCD: soCMND
     };
     
     // Vô hiệu hóa nút submit
