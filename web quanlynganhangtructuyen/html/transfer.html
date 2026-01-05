@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyển Tiền - VCBDigibank</title>
+    <link rel="stylesheet" href="../css/customer-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>VCB<span>Digibank</span></h1>
+            </div>
+            <div class="user-info">
+                <span class="welcome">Xin chào, <strong id="userName">Khách hàng</strong></span>
+                <button onclick="dangXuat()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </header>
+
+        <!-- Menu điều hướng -->
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fas fa-home"></i> Trang chủ
+            </a>
+            <a href="transfer.html" class="nav-item active">
+                <i class="fas fa-exchange-alt"></i> Chuyển tiền
+            </a>
+            <a href="transaction-history.html" class="nav-item">
+                <i class="fas fa-history"></i> Lịch sử GD
+            </a>
+            <a href="customer-profile.html" class="nav-item">
+                <i class="fas fa-user"></i> Thông tin cá nhân
+            </a>
+        </nav>
+
+        <!-- Nội dung chính -->
+        <main class="main-content">
+            <h2>Chuyển Tiền</h2>
+            
+            <!-- Bước 1: Tìm kiếm người nhận -->
+            <div class="card" id="step1" style="display: block;">
+                <div class="card-header">
+                    <h3>Bước 1: Tìm Người Nhận</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="keyword">Số tài khoản hoặc tên người nhận:</label>
+                        <input type="text" id="keyword" placeholder="Nhập số tài khoản hoặc họ tên">
+                    </div>
+                    <button onclick="timKiemNguoiNhan()" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Tìm kiếm
+                    </button>
+                    
+                    <div id="ketQuaTimKiem" style="margin-top: 20px; display: none;">
+                        <h4>Thông tin người nhận:</h4>
+                        <div class="info-group">
+                            <label>Số tài khoản:</label>
+                            <span id="soTaiKhoanNhan"></span>
+                        </div>
+                        <div class="info-group">
+                            <label>Họ tên:</label>
+                            <span id="hoTenNhan"></span>
+                        </div>
+                        <div class="info-group">
+                            <label>Trạng thái:</label>
+                            <span id="trangThaiNhan"></span>
+                        </div>
+                        <button onclick="chuyenSangBuoc2()" class="btn btn-success" style="margin-top: 15px;">
+                            <i class="fas fa-arrow-right"></i> Tiếp tục
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bước 2: Nhập số tiền và nội dung -->
+            <div class="card" id="step2" style="display: none;">
+                <div class="card-header">
+                    <h3>Bước 2: Nhập Thông Tin Chuyển Tiền</h3>
+                </div>
+                <div class="card-body">
+                    <div class="info-group">
+                        <label>Người nhận:</label>
+                        <span id="nguoiNhanInfo"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="soTien">Số tiền (VNĐ):</label>
+                        <input type="number" id="soTien" placeholder="Nhập số tiền" min="1000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="noiDung">Nội dung chuyển tiền:</label>
+                        <textarea id="noiDung" rows="3" placeholder="Nhập nội dung chuyển tiền"></textarea>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button onclick="quayLaiBuoc1()" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Quay lại
+                        </button>
+                        <button onclick="xacNhanChuyenTien()" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Xác nhận
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bước 3: Nhập mã OTP -->
+            <div class="card" id="step3" style="display: none;">
+                <div class="card-header">
+                    <h3>Bước 3: Xác Nhận Mã OTP</h3>
+                </div>
+                <div class="card-body">
+                    <div class="thong-bao thong-bao-success">
+                        <i class="fas fa-info-circle"></i>
+                        Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra và nhập mã OTP để hoàn tất giao dịch.
+                    </div>
+                    
+                    <div class="info-group">
+                        <label>Người nhận:</label>
+                        <span id="nguoiNhanInfoOTP"></span>
+                    </div>
+                    <div class="info-group">
+                        <label>Số tiền:</label>
+                        <span id="soTienInfoOTP"></span>
+                    </div>
+                    <div class="info-group">
+                        <label>Nội dung:</label>
+                        <span id="noiDungInfoOTP"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maOTP">Mã OTP (6 chữ số):</label>
+                        <input type="text" id="maOTP" placeholder="Nhập mã OTP" maxlength="6" pattern="[0-9]{6}">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button onclick="huyGiaoDich()" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Hủy
+                        </button>
+                        <button onclick="xacNhanOTP()" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Xác nhận chuyển tiền
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="thongBao" class="thong-bao" style="display: none;"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 VCB Digibank - Ngân hàng trực tuyến</p>
+        </footer>
+    </div>
+
+    <script src="../js/transfer.js"></script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch Sử Giao Dịch - VCBDigibank</title>
+    <link rel="stylesheet" href="../css/customer-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .transaction-table thead {
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: white;
+        }
+        
+        .transaction-table th,
+        .transaction-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .transaction-table th {
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .transaction-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .transaction-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .loai-gd {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        .loai-gd.gui {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .loai-gd.nhan {
+            background-color: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .so-tien {
+            font-weight: 600;
+        }
+        
+        .so-tien.gui {
+            color: #dc2626;
+        }
+        
+        .so-tien.nhan {
+            color: #16a34a;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px 0;
+        }
+        
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #374151;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            background: #16a34a;
+            color: white;
+            border-color: #16a34a;
+        }
+        
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination span {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+        
+        .empty-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+        
+        .empty-message i {
+            font-size: 3em;
+            color: #d1d5db;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .transaction-table {
+                font-size: 0.85em;
+            }
+            
+            .transaction-table th,
+            .transaction-table td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>VCB<span>Digibank</span></h1>
+            </div>
+            <div class="user-info">
+                <span class="welcome">Xin chào, <strong id="userName">Khách hàng</strong></span>
+                <button onclick="dangXuat()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </header>
+
+        <!-- Menu điều hướng -->
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fas fa-home"></i> Trang chủ
+            </a>
+            <a href="transfer.html" class="nav-item">
+                <i class="fas fa-exchange-alt"></i> Chuyển tiền
+            </a>
+            <a href="transaction-history.html" class="nav-item active">
+                <i class="fas fa-history"></i> Lịch sử GD
+            </a>
+            <a href="customer-profile.html" class="nav-item">
+                <i class="fas fa-user"></i> Thông tin cá nhân
+            </a>
+        </nav>
+
+        <!-- Nội dung chính -->
+        <main class="main-content">
+            <h2>Lịch Sử Giao Dịch</h2>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Danh sách giao dịch</h3>
+                </div>
+                <div class="card-body">
+                    <div id="loadingMessage" style="text-align: center; padding: 20px;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2em; color: #16a34a;"></i>
+                        <p>Đang tải dữ liệu...</p>
+                    </div>
+                    
+                    <div id="transactionContainer" style="display: none;">
+                        <table class="transaction-table">
+                            <thead>
+                                <tr>
+                                    <th>Ngày GD</th>
+                                    <th>Loại</th>
+                                    <th>Người liên quan</th>
+                                    <th>Số tiền</th>
+                                    <th>Nội dung</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionTableBody">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                        
+                        <div class="pagination">
+                            <button id="prevBtn" onclick="chuyenTrang(-1)">
+                                <i class="fas fa-chevron-left"></i> Trước
+                            </button>
+                            <span id="pageInfo">Trang 1 / 1</span>
+                            <button id="nextBtn" onclick="chuyenTrang(1)">
+                                Sau <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="emptyMessage" class="empty-message" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <p>Chưa có giao dịch nào</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="thongBao" class="thong-bao" style="display: none;"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 VCB Digibank - Ngân hàng trực tuyến</p>
+        </footer>
+    </div>
+
+    <script src="../js/transaction-history.js"></script>
+</body>
+</html>

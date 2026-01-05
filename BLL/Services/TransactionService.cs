@@ -229,9 +229,7 @@ namespace BLL.Services
             }
         }
 
-        /// <summary>
         /// Lấy lịch sử giao dịch của người dùng (cả gửi và nhận)
-        /// </summary>
         public async Task<object> LayLichSuGiaoDichAsync(int maNguoiDung, int pageSize = 20, int pageNumber = 1)
         {
             // Bước 1: Tìm khách hàng từ maNguoiDung
