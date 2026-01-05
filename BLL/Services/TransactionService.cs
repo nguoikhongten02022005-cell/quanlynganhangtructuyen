@@ -47,10 +47,8 @@ namespace BLL.Services
                 trangThai = taiKhoan.TrangThai
             };
         }
-
-        /// <summary>
         /// Khởi tạo giao dịch chuyển tiền với mã OTP
-        /// </summary>
+
         public async Task<object> TaoGiaoDichVoiOTPAsync(int maNguoiDung, string soTaiKhoanNhan, decimal soTien, string noiDung)
         {
             // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
@@ -229,6 +227,65 @@ namespace BLL.Services
 
                 throw new Exception($"Chuyển tiền thất bại: {ex.Message}");
             }
+        }
+
+        /// Lấy lịch sử giao dịch của người dùng (cả gửi và nhận)
+        public async Task<object> LayLichSuGiaoDichAsync(int maNguoiDung, int pageSize = 20, int pageNumber = 1)
+        {
+            // Bước 1: Tìm khách hàng từ maNguoiDung
+            var khachHang = await _db.KhachHang
+                .FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
+
+            if (khachHang == null)
+            {
+                throw new Exception("Không tìm thấy thông tin khách hàng.");
+            }
+
+            // Bước 2: Tìm tài khoản của khách hàng
+            var taiKhoan = await _db.TaiKhoan
+                .FirstOrDefaultAsync(x => x.MaKhachHang == khachHang.MaKhachHang);
+
+            if (taiKhoan == null)
+            {
+                throw new Exception("Bạn chưa có tài khoản ngân hàng.");
+            }
+
+            // Bước 3: Lấy giao dịch (cả GỬI và NHẬN), chỉ lấy SUCCESS
+            var query = _db.GiaoDich
+                .Where(x => (x.MaTaiKhoanGui == taiKhoan.MaTaiKhoan || 
+                            x.MaTaiKhoanNhan == taiKhoan.MaTaiKhoan) &&
+                            x.TrangThai == "SUCCESS")
+                .OrderByDescending(x => x.NgayGiaoDich);
+
+            // Bước 4: Đếm tổng số giao dịch
+            var tongSo = await query.CountAsync();
+
+            // Bước 5: Phân trang
+            var danhSach = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new
+                {
+                    maGiaoDich = x.MaGiaoDich,
+                    loaiGiaoDich = x.MaTaiKhoanGui == taiKhoan.MaTaiKhoan ? "CHUYEN" : "NHAN",
+                    soTien = x.SoTien,
+                    noiDung = x.NoiDung,
+                    ngayGiaoDich = x.NgayGiaoDich,
+                    trangThai = x.TrangThai,
+                    maTaiKhoanGui = x.MaTaiKhoanGui,
+                    maTaiKhoanNhan = x.MaTaiKhoanNhan
+                })
+                .ToListAsync();
+
+            // Bước 6: Return kết quả
+            return new
+            {
+                danhSach,
+                tongSo,
+                trang = pageNumber,
+                kichThuocTrang = pageSize,
+                tongTrang = (int)Math.Ceiling((double)tongSo / pageSize)
+            };
         }
     }
 }
