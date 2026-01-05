@@ -4,45 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thông Tin Cá Nhân</title>
-    <link rel="stylesheet" href="../css/customer-profile.css">
+    <link rel="stylesheet" href="../css/customer-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <h1>Thông Tin Cá Nhân</h1>
-        
-        <div id="thongBao" class="thong-bao"></div>
-        
-        <div id="profileContent" class="profile-content">
-            <div class="info-row">
-                <label>Họ và tên:</label>
-                <span id="hoTen">---</span>
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>VCB<span>Digibank</span></h1>
             </div>
+            <div class="user-info">
+                <span class="welcome">Xin chào, <strong id="userName">Khách hàng</strong></span>
+                <button onclick="dangXuat()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </header>
+
+        <!-- Menu điều hướng -->
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fas fa-home"></i> Trang chủ
+            </a>
+            <a href="customer-profile.html" class="nav-item active">
+                <i class="fas fa-user"></i> Thông tin cá nhân
+            </a>
+            <a href="customer-kyc.html" class="nav-item">
+                <i class="fas fa-id-card"></i> Xác minh KYC
+            </a>
+            <a href="change-password.html" class="nav-item">
+                <i class="fas fa-key"></i> Đổi mật khẩu
+            </a>
+        </nav>
+
+        <!-- Nội dung chính -->
+        <main class="main-content">
+            <h2>Thông tin cá nhân</h2>
             
-            <div class="info-row">
-                <label>Email:</label>
-                <span id="email">---</span>
+            <div class="cards">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-user-circle"></i>
+                        <h3>Thông tin khách hàng</h3>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Họ và tên:</strong> <span id="hoTen">---</span></p>
+                        <p><strong>Email:</strong> <span id="email">---</span></p>
+                        <p><strong>Số điện thoại:</strong> <span id="soDienThoai">---</span></p>
+                        <p><strong>Số CCCD:</strong> <span id="soCCCD">---</span></p>
+                        <p><strong>Trạng thái KYC:</strong> <span id="trangThaiKyc" class="kyc-status">---</span></p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="customer-kyc.html" class="btn-link">Gửi xác minh KYC →</a>
+                    </div>
+                </div>
             </div>
-            
-            <div class="info-row">
-                <label>Số điện thoại:</label>
-                <span id="soDienThoai">---</span>
-            </div>
-            
-            <div class="info-row">
-                <label>Địa chỉ:</label>
-                <span id="diaChi">---</span>
-            </div>
-            
-            <div class="info-row">
-                <label>Trạng thái KYC:</label>
-                <span id="trangThaiKyc" class="kyc-status">---</span>
-            </div>
-        </div>
-        
-        <div class="actions">
-            <button onclick="quayLai()" class="btn-secondary">Quay lại</button>
-            <button onclick="chuyenDenKyc()" class="btn-primary">Gửi xác minh KYC</button>
-        </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 VCB Digibank - Ngân hàng trực tuyến</p>
+        </footer>
     </div>
     
     <script src="../js/customer-profile.js"></script>

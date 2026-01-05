@@ -29,8 +29,8 @@ document.getElementById('changePasswordForm').addEventListener('submit', functio
 
     // Goi API doi mat khau
     goiAPIDoiMatKhau({
-        oldPass: matKhauCu,
-        newPass: matKhauMoi
+        matKhauCu: matKhauCu,
+        matKhauMoi: matKhauMoi
     })
     .finally(() => {
         nutGuiForm.classList.remove('loading');

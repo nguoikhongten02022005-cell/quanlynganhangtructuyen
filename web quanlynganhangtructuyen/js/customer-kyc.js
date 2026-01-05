@@ -1,11 +1,52 @@
 // Địa chỉ API
-const API_URL = 'http://localhost:5000/api/customer/kyc';
+const API_URL = 'https://localhost:7079/api/customer/kyc';
+
+// Kiểm tra đăng nhập
+function kiemTraDangNhap() {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    
+    if (!token) {
+        window.location.href = 'index.html';
+        return false;
+    }
+    
+    if (role !== 'CUSTOMER') {
+        window.location.href = 'admin-dashboard.html';
+        return false;
+    }
+    
+    return true;
+}
+
+// Hiển thị tên người dùng
+function hienThiTenNguoiDung() {
+    const hoTen = localStorage.getItem('fullName');
+    if (hoTen) {
+        document.getElementById('userName').textContent = hoTen;
+    }
+}
+
+// Đăng xuất
+function dangXuat() {
+    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('fullName');
+        window.location.href = 'index.html';
+    }
+}
 
 // Hàm hiển thị thông báo
 function hienThiThongBao(noiDung, loai) {
     const thongBao = document.getElementById('thongBao');
     thongBao.textContent = noiDung;
     thongBao.className = 'thong-bao ' + loai;
+    thongBao.style.display = 'block';
+    
+    setTimeout(() => {
+        thongBao.style.display = 'none';
+    }, 5000);
 }
 
 // Hàm lấy token từ localStorage
@@ -52,7 +93,7 @@ async function xuLyGuiKyc(event) {
     
     // Tạo object dữ liệu gửi đi
     const duLieuKyc = {
-        soCMND: soCMND,
+        soCCCD: soCMND,
         anhCMNDTruoc: anhCMNDTruoc,
         anhCMNDSau: anhCMNDSau
     };
@@ -60,7 +101,7 @@ async function xuLyGuiKyc(event) {
     // Vô hiệu hóa nút submit
     const btnSubmit = event.target.querySelector('button[type="submit"]');
     btnSubmit.disabled = true;
-    btnSubmit.textContent = 'Đang gửi...';
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
     
     try {
         const response = await fetch(API_URL, {
@@ -84,15 +125,15 @@ async function xuLyGuiKyc(event) {
                 window.location.href = 'customer-profile.html';
             }, 2000);
         } else {
-            hienThiThongBao(data.message || 'Gửi KYC thất bại!', 'loi');
+            hienThiThongBao(data.thongBao || 'Gửi KYC thất bại!', 'loi');
             btnSubmit.disabled = false;
-            btnSubmit.textContent = 'Gửi xác minh';
+            btnSubmit.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi xác minh';
         }
     } catch (error) {
         hienThiThongBao('Lỗi kết nối đến server!', 'loi');
         console.error('Lỗi:', error);
         btnSubmit.disabled = false;
-        btnSubmit.textContent = 'Gửi xác minh';
+        btnSubmit.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi xác minh';
     }
 }
 
@@ -100,6 +141,15 @@ async function xuLyGuiKyc(event) {
 function quayLai() {
     window.history.back();
 }
+
+// Khởi tạo khi trang load
+window.addEventListener('load', function() {
+    if (!kiemTraDangNhap()) {
+        return;
+    }
+    
+    hienThiTenNguoiDung();
+});
 
 // Gắn sự kiện submit cho form
 document.getElementById('formKyc').addEventListener('submit', xuLyGuiKyc);
