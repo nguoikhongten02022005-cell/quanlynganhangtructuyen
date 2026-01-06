@@ -14,7 +14,7 @@ namespace quanlynganhangtructuyen.Controllers
 {
     [ApiController]
     [Route("api/auth")]
-    public class AuthController : ControllerBase
+    public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
         private readonly NganHangDAL _db;
@@ -33,9 +33,7 @@ namespace quanlynganhangtructuyen.Controllers
             if (string.IsNullOrWhiteSpace(req.TenDangNhap) ||
                 string.IsNullOrWhiteSpace(req.MatKhau) ||
                 string.IsNullOrWhiteSpace(req.HoTen))
-            {
                 return BadRequest(new { thongBao = "Thiếu thông tin tên đăng nhập, mật khẩu hoặc họ tên." });
-            }
 
             try
             {
@@ -46,7 +44,6 @@ namespace quanlynganhangtructuyen.Controllers
             {
                 if (ex.Message.Contains("tồn tại"))
                     return Conflict(new { thongBao = ex.Message });
-
                 return StatusCode(500, new { thongBao = "Lỗi hệ thống.", loi = ex.Message });
             }
         }
@@ -55,34 +52,13 @@ namespace quanlynganhangtructuyen.Controllers
         public async Task<IActionResult> DangNhap([FromBody] DangNhapRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.TenDangNhap) || string.IsNullOrWhiteSpace(req.MatKhau))
-            {
                 return BadRequest(new { thongBao = "Vui lòng nhập tên đăng nhập và mật khẩu." });
-            }
 
             try
             {
                 var nguoiDung = await _authService.DangNhapAsync(req.TenDangNhap, req.MatKhau);
-
-                string hoTenHienThi = "";
-
-                if (nguoiDung.VaiTro == "CUSTOMER")
-                {
-                    await using var conn = await _db.GetOpenConnectionAsync();
-                    var cmd = new SqlCommand("SELECT HoTen FROM KhachHang WHERE MaNguoiDung = @MaNguoiDung", conn);
-                    cmd.Parameters.AddWithValue("@MaNguoiDung", nguoiDung.MaNguoiDung);
-                    var hoTen = await cmd.ExecuteScalarAsync() as string;
-                    hoTenHienThi = hoTen ?? "Khách hàng (Lỗi hồ sơ)";
-                }
-                else if (nguoiDung.VaiTro == "ADMIN")
-                {
-                    hoTenHienThi = "Quản Trị Viên (Admin)";
-                }
-                else if (nguoiDung.VaiTro == "STAFF")
-                {
-                    hoTenHienThi = "Giao Dịch Viên";
-                }
-
-                string token = TaoJwtToken(nguoiDung, hoTenHienThi);
+                var hoTenHienThi = await LayTenHienThi(nguoiDung);
+                var token = TaoJwtToken(nguoiDung, hoTenHienThi);
 
                 return Ok(new
                 {
@@ -103,17 +79,17 @@ namespace quanlynganhangtructuyen.Controllers
         [HttpPost("change-password")]
         public async Task<IActionResult> DoiMatKhau([FromBody] DoiMatKhauRequest req)
         {
+            var maNguoiDung = LayMaNguoiDung();
+            if (maNguoiDung == null)
+                return KhongHopLe();
+
             if (string.IsNullOrWhiteSpace(req.MatKhauCu) || string.IsNullOrWhiteSpace(req.MatKhauMoi))
                 return BadRequest(new { thongBao = "Thiếu mật khẩu cũ hoặc mật khẩu mới." });
 
-            string? userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out int maNguoiDung))
-                return Unauthorized(new { thongBao = "Token không hợp lệ." });
-
             try
             {
-                await _authService.DoiMatKhauAsync(maNguoiDung, req.MatKhauCu, req.MatKhauMoi);
-                return Ok(new { thongBao = "Đổi mật khẩu thành công." });
+                await _authService.DoiMatKhauAsync(maNguoiDung.Value, req.MatKhauCu, req.MatKhauMoi);
+                return ThanhCong("Đổi mật khẩu thành công.");
             }
             catch (Exception ex)
             {
@@ -121,6 +97,22 @@ namespace quanlynganhangtructuyen.Controllers
             }
         }
 
+        private async Task<string> LayTenHienThi(NguoiDungDTO nguoiDung)
+        {
+            if (nguoiDung.VaiTro == "CUSTOMER")
+            {
+                await using var conn = await _db.GetOpenConnectionAsync();
+                var cmd = new SqlCommand("SELECT HoTen FROM KhachHang WHERE MaNguoiDung = @MaNguoiDung", conn);
+                cmd.Parameters.AddWithValue("@MaNguoiDung", nguoiDung.MaNguoiDung);
+                return (await cmd.ExecuteScalarAsync() as string) ?? "Khách hàng";
+            }
+            return nguoiDung.VaiTro switch
+            {
+                "ADMIN" => "Quản Trị Viên",
+                "STAFF" => "Giao Dịch Viên",
+                _ => "Người dùng"
+            };
+        }
 
         private string TaoJwtToken(NguoiDungDTO nguoiDung, string hoTen)
         {
@@ -131,10 +123,10 @@ namespace quanlynganhangtructuyen.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, nguoiDung.MaNguoiDung.ToString()),
-                new Claim(ClaimTypes.Role, nguoiDung.VaiTro),
-                new Claim("hoTen", hoTen ?? ""),
-                new Claim("tenDangNhap", nguoiDung.TenDangNhap ?? "")
+                new(ClaimTypes.NameIdentifier, nguoiDung.MaNguoiDung.ToString()),
+                new(ClaimTypes.Role, nguoiDung.VaiTro),
+                new("hoTen", hoTen ?? ""),
+                new("tenDangNhap", nguoiDung.TenDangNhap ?? "")
             };
 
             var credentials = new SigningCredentials(

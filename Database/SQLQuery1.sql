@@ -80,6 +80,20 @@ CREATE INDEX IX_GiaoDich_MaTaiKhoanGui_NgayGiaoDich ON GiaoDich(MaTaiKhoanGui, N
 CREATE INDEX IX_GiaoDich_MaTaiKhoanNhan_NgayGiaoDich ON GiaoDich(MaTaiKhoanNhan, NgayGiaoDich DESC);  -- Composite
 GO
 
+-- Bang lich su dang nhap
+CREATE TABLE LichSuDangNhap (
+    MaLichSu INT PRIMARY KEY IDENTITY(1,1),
+    MaNguoiDung INT NOT NULL,
+    ThoiGianDangNhap DATETIME DEFAULT GETDATE(),
+    DiaChiIP VARCHAR(45),
+    ThietBi NVARCHAR(255),
+    TrinhDuyet NVARCHAR(255),
+    TrangThai VARCHAR(10) NOT NULL DEFAULT 'SUCCESS' CHECK (TrangThai IN ('SUCCESS', 'FAILED')),
+    LyDoThatBai NVARCHAR(255),
+    FOREIGN KEY (MaNguoiDung) REFERENCES NguoiDung(MaNguoiDung)
+);
+GO
+
 -- Bang ghi chu cua nhan vien (Staff Module)
 CREATE TABLE GhiChuKhachHang (
     MaGhiChu INT PRIMARY KEY IDENTITY(1,1),
@@ -90,6 +104,11 @@ CREATE TABLE GhiChuKhachHang (
     FOREIGN KEY (MaKhachHang) REFERENCES KhachHang(MaKhachHang),
     FOREIGN KEY (MaNhanVien) REFERENCES NguoiDung(MaNguoiDung)
 );
+GO
+
+-- Index cho LichSuDangNhap
+CREATE INDEX IX_LichSuDangNhap_MaNguoiDung ON LichSuDangNhap(MaNguoiDung);
+CREATE INDEX IX_LichSuDangNhap_ThoiGianDangNhap ON LichSuDangNhap(ThoiGianDangNhap DESC);
 GO
 
 -- Index cho GhiChuKhachHang

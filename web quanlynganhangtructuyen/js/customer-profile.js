@@ -1,5 +1,5 @@
 // Địa chỉ API
-const API_URL = 'https://localhost:7079/api/customer/profile';
+const API_URL = 'https://localhost:5001/api/customer/profile';
 
 // Kiểm tra đăng nhập
 function kiemTraDangNhap() {
@@ -70,13 +70,13 @@ async function taiThongTinProfile() {
         
         if (response.ok) {
             // Hiển thị thông tin lên giao diện
-            document.getElementById('hoTen').textContent = data.hoTen || '---';
-            document.getElementById('email').textContent = data.email || '---';
-            document.getElementById('soDienThoai').textContent = data.soDienThoai || '---';
-            document.getElementById('soCCCD').textContent = data.soCCCD || '---';
+            document.getElementById('hoTen').textContent = data.HoTen || '---';
+            document.getElementById('email').textContent = data.Email || '---';
+            document.getElementById('soDienThoai').textContent = data.SoDienThoai || '---';
+            document.getElementById('soCCCD').textContent = data.SoCCCD || '---';
             
             const kycElement = document.getElementById('trangThaiKyc');
-            const trangThaiKyc = data.trangThaiKyc || 'NONE';
+            const trangThaiKyc = data.TrangThaiKYC || 'NONE';
             
             // Hiển thị trạng thái KYC bằng tiếng Việt
             let trangThaiText = 'Chưa xác minh';

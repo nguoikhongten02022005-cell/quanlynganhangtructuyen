@@ -1,5 +1,5 @@
 // Địa chỉ API
-const API_URL = 'https://localhost:7079/api/customer/kyc';
+const API_URL = 'https://localhost:5001/api/customer/kyc';
 
 // Kiểm tra đăng nhập
 function kiemTraDangNhap() {

@@ -1,5 +1,7 @@
 using BLL.Services;
 using DAL;
+using DAL.Repositories;
+using DAL.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -11,9 +13,24 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Đăng ký NganHangDAL với connection string từ appsettings.json
-builder.Services.AddScoped<NganHangDAL>(sp =>
-    new NganHangDAL(builder.Configuration.GetConnectionString("Default")!));
+// Đăng ký NganHangContext với connection string từ appsettings.json
+builder.Services.AddScoped<NganHangContext>(sp =>
+    new NganHangContext(builder.Configuration.GetConnectionString("Default")!));
+
+// Đăng ký NganHangDAL
+builder.Services.AddScoped<NganHangDAL>();
+
+// Đăng ký các DAL
+builder.Services.AddScoped<NguoiDungDAL>();
+builder.Services.AddScoped<KhachHangDAL>();
+builder.Services.AddScoped<TaiKhoanDAL>();
+builder.Services.AddScoped<GiaoDichDAL>();
+
+// Đăng ký các Repositories
+builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
+builder.Services.AddScoped<IKhachHangRepository, KhachHangRepository>();
+builder.Services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
+builder.Services.AddScoped<IGiaoDichRepository, GiaoDichRepository>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

@@ -18,5 +18,8 @@ namespace BLL.Services
 
         // Lấy thống kê dashboard
         Task<AdminDashboardDTO> LayThongKeDashboardAsync();
+
+        // Reset mật khẩu người dùng (chỉ Admin)
+        Task ResetMatKhauAsync(int maNguoiDung, string matKhauMoi);
     }
 }
