@@ -1,258 +1,417 @@
-// Khởi tạo biến toàn cục
+const API_URL = 'https://localhost:5001/api';
 let token = localStorage.getItem('token');
-let currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-// Hàm kiểm tra xác thực
-function checkAuth() {
-    if (!token) {
-        window.location.href = 'index.html';
-        return false;
+// Toast notification
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+
+    toast.className = 'toast';
+    if (type === 'error') {
+        toast.classList.add('error');
     }
-    return true;
+
+    toastMessage.textContent = message;
+    toast.classList.add('show');
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
 }
 
-// Hàm gọi API
-async function callApi(endpoint, method = 'GET', body = null) {
-    const url = `https://localhost:7079/api${endpoint}`;
-    const options = {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    };
-
-    if (body) {
-        options.body = JSON.stringify(body);
-    }
-
-    try {
-        const response = await fetch(url, options);
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.thongBao || 'Lỗi hệ thống');
-        }
-
-        return data;
-    } catch (error) {
-        console.error('API Error:', error);
-        alert('Lỗi: ' + error.message);
-        return null;
-    }
-}
-
-// Hàm đăng xuất
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+// Check login
+if (!token) {
     window.location.href = 'index.html';
 }
 
-// Hàm tải thông tin người dùng
-function loadUserInfo() {
-    if (currentUser.fullName) {
-        document.getElementById('fullName').textContent = currentUser.fullName;
-    }
-}
+// Tab switching
+document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+        e.preventDefault();
 
-// Hàm chuyển đổi giữa các section
-function switchSection(sectionId) {
-    // Ẩn tất cả các section
-    document.querySelectorAll('.section').forEach(section => {
-        section.classList.remove('active');
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+        tab.classList.add('active');
+        const sectionId = tab.getAttribute('data-section');
+        document.getElementById(sectionId).classList.add('active');
+
+        if (sectionId === 'dashboard') {
+            loadDashboard();
+        } else if (sectionId === 'users') {
+            loadUsers();
+        } else if (sectionId === 'accounts') {
+            loadAccounts();
+        } else if (sectionId === 'kyc-pending') {
+            loadKYCPending();
+        }
     });
+});
 
-    // Xóa active class khỏi tất cả nav links
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('token');
+    window.location.href = 'index.html';
+});
 
-    // Hiển thị section được chọn
-    document.getElementById(sectionId).classList.add('active');
-
-    // Đánh dấu nav link tương ứng là active
-    document.querySelector(`[data-section="${sectionId}"]`).classList.add('active');
-
-    // Tải dữ liệu cho section tương ứng
-    switch (sectionId) {
-        case 'dashboard':
-            loadDashboardData();
-            break;
-        case 'users':
-            loadUsersData();
-            break;
-        case 'kyc-pending':
-            loadKycPendingData();
-            break;
-    }
-}
-
-// Hàm tải dữ liệu dashboard
-async function loadDashboardData() {
+// Load Dashboard
+async function loadDashboard() {
     try {
-        // Lấy tổng số người dùng
-        const usersData = await callApi('/admin/users');
-        if (usersData) {
-            document.getElementById('totalUsers').textContent = usersData.tongSo || 0;
-        }
+        const response = await fetch(`${API_URL}/admin/dashboard`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-        // Lấy số KYC chờ duyệt
-        const kycData = await callApi('/admin/kyc-pending');
-        if (kycData) {
-            document.getElementById('pendingKyc').textContent = kycData.data?.tongSo || 0;
-        }
+        if (response.ok) {
+            const data = await response.json();
+            const stats = data.data;
 
-        // Tính số tài khoản bị khóa
-        const lockedAccounts = usersData?.danhSach?.filter(user => user.trangThai === 'LOCKED').length || 0;
-        document.getElementById('lockedAccounts').textContent = lockedAccounts;
+            document.getElementById('totalUsers').textContent = stats.TongNguoiDung;
+            document.getElementById('totalCustomers').textContent = stats.TongKhachHang;
+            document.getElementById('pendingKyc').textContent = stats.SoKYCChoDuyet;
+            document.getElementById('totalTransactions').textContent = stats.TongGiaoDich;
+            document.getElementById('totalAmount').textContent =
+                new Intl.NumberFormat('vi-VN').format(stats.TongSoTienGiaoDich) + ' VNĐ';
+        } else {
+            console.error('Dashboard API error:', response.status);
+            showToast('Không thể tải thống kê', 'error');
+        }
     } catch (error) {
-        console.error('Lỗi khi tải dữ liệu dashboard:', error);
+        console.error('Error loading dashboard:', error);
+        showToast('Lỗi kết nối server', 'error');
     }
 }
 
-// Hàm tải dữ liệu người dùng
-async function loadUsersData() {
+// Load Users
+async function loadUsers() {
+    const role = document.getElementById('roleFilter').value;
+    const status = document.getElementById('statusFilter').value;
+
+    let url = `${API_URL}/admin/users`;
+    const params = new URLSearchParams();
+    if (role) params.append('role', role);
+    if (status) params.append('status', status);
+    if (params.toString()) url += '?' + params.toString();
+
     try {
-        const role = document.getElementById('roleFilter').value;
-        const status = document.getElementById('statusFilter').value;
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-        let endpoint = '/admin/users';
-        const params = [];
-        if (role) params.push(`role=${role}`);
-        if (status) params.push(`status=${status}`);
+        if (response.ok) {
+            const data = await response.json();
+            const users = data.danhSach || [];
 
-        if (params.length > 0) {
-            endpoint += '?' + params.join('&');
-        }
-
-        const data = await callApi(endpoint);
-        if (data && data.danhSach) {
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = '';
 
-            data.danhSach.forEach(user => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${user.maNguoiDung}</td>
-                    <td>${user.tenDangNhap}</td>
-                    <td>${user.vaiTro}</td>
-                    <td>${user.trangThai}</td>
-                    <td>${user.hoTen}</td>
-                    <td>${user.email || ''}</td>
-                    <td>${user.soDienThoai || ''}</td>
-                    <td class="action-buttons">
-                        <button class="btn-lock" onclick="toggleUserStatus(${user.maNguoiDung}, true)" ${user.trangThai === 'LOCKED' ? 'style="display:none"' : ''}>Khóa</button>
-                        <button class="btn-unlock" onclick="toggleUserStatus(${user.maNguoiDung}, false)" ${user.trangThai === 'ACTIVE' ? 'style="display:none"' : ''}>Mở khóa</button>
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Không có người dùng</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.MaNguoiDung}</td>
+                    <td>${user.TenDangNhap}</td>
+                    <td>${user.HoTen || 'N/A'}</td>
+                    <td>${user.Email || 'N/A'}</td>
+                    <td><span class="badge ${getBadgeClass(user.VaiTro)}">${user.VaiTro}</span></td>
+                    <td><span class="badge ${user.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.TrangThai}</span></td>
+                    <td>
+                        <button class="btn ${user.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockUser(${user.MaNguoiDung}, ${user.TrangThai === 'ACTIVE'})">
+                            ${user.TrangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                        </button>
                     </td>
                 `;
-                tbody.appendChild(row);
+                tbody.appendChild(tr);
             });
+        } else {
+            showToast('Không thể tải danh sách người dùng', 'error');
         }
     } catch (error) {
-        console.error('Lỗi khi tải dữ liệu người dùng:', error);
+        console.error('Error loading users:', error);
+        showToast('Lỗi kết nối server', 'error');
     }
 }
 
-// Hàm khóa/mở khóa tài khoản
-async function toggleUserStatus(userId, lock) {
+function getBadgeClass(role) {
+    if (role === 'ADMIN') return 'danger';
+    if (role === 'STAFF') return 'warning';
+    return 'primary';
+}
+
+// Lock/Unlock User
+async function lockUser(userId, shouldLock) {
     try {
-        const result = await callApi(`/admin/users/${userId}/lock`, 'PUT', {
-            khoa: lock
+        const response = await fetch(`${API_URL}/user/lock`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                maNguoiDung: userId,
+                khoa: shouldLock
+            })
         });
 
-        if (result) {
-            alert(result.thongBao);
-            loadUsersData(); // Tải lại danh sách người dùng
+        if (response.ok) {
+            showToast(shouldLock ? 'Đã khóa người dùng' : 'Đã mở khóa người dùng');
+            loadUsers();
+        } else {
+            showToast('Có lỗi xảy ra', 'error');
         }
     } catch (error) {
-        console.error('Lỗi khi thay đổi trạng thái người dùng:', error);
+        showToast('Có lỗi xảy ra', 'error');
     }
 }
 
-// Hàm tải dữ liệu KYC chờ duyệt
-async function loadKycPendingData() {
+// Load KYC Pending
+async function loadKYCPending() {
     try {
-        const data = await callApi('/admin/kyc-pending');
-        if (data && data.data?.danhSach) {
-            const tbody = document.getElementById('kycPendingTableBody');
+        const response = await fetch(`${API_URL}/admin/kyc-pending`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            const kycList = result.data || [];
+
+            const tbody = document.getElementById('kycTableBody');
             tbody.innerHTML = '';
 
-            data.data.danhSach.forEach(kyc => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${kyc.maKhachHang}</td>
-                    <td>${kyc.maNguoiDung}</td>
-                    <td>${kyc.hoTen}</td>
-                    <td>${kyc.email}</td>
-                    <td>${kyc.soDienThoai}</td>
-                    <td>${kyc.soCCCD}</td>
-                    <td>${kyc.trangThaiKYC}</td>
+            if (kycList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Không có KYC chờ duyệt</td></tr>';
+                return;
+            }
+
+            kycList.forEach(kyc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${kyc.MaKhachHang}</td>
+                    <td>${kyc.HoTen}</td>
+                    <td>${kyc.SoCCCD || 'N/A'}</td>
+                    <td>${kyc.Email || 'N/A'}</td>
+                    <td>${kyc.SoDienThoai || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-success" onclick="approveKYC(${kyc.MaKhachHang}, 'APPROVED')">Duyệt</button>
+                        <button class="btn btn-danger" onclick="approveKYC(${kyc.MaKhachHang}, 'REJECTED')">Từ chối</button>
+                    </td>
                 `;
-                tbody.appendChild(row);
+                tbody.appendChild(tr);
             });
+        } else {
+            showToast('Không thể tải danh sách KYC', 'error');
         }
     } catch (error) {
-        console.error('Lỗi khi tải dữ liệu KYC chờ duyệt:', error);
+        console.error('Error loading KYC:', error);
+        showToast('Có lỗi xảy ra khi tải KYC', 'error');
     }
 }
 
-// Hàm duyệt KYC
-async function approveKyc() {
+// Approve KYC
+async function approveKYC(customerId, status) {
+    let reason = null;
+    if (status === 'REJECTED') {
+        reason = prompt('Nhập lý do từ chối:');
+        if (!reason) return;
+    }
+
     try {
-        const customerId = document.getElementById('customerId').value;
-        const status = document.getElementById('kycStatus').value;
-        const reason = document.getElementById('kycReason').value;
-
-        if (!customerId) {
-            alert('Vui lòng nhập mã khách hàng');
-            return;
-        }
-
-        const result = await callApi('/admin/kyc-approve', 'POST', {
-            customerId: parseInt(customerId),
-            status: status,
-            reason: reason || null
+        const response = await fetch(`${API_URL}/admin/kyc-approve`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                customerId: customerId,
+                status: status,
+                reason: reason
+            })
         });
 
-        if (result) {
-            alert(result.thongBao);
-            document.getElementById('customerId').value = '';
-            document.getElementById('kycReason').value = '';
-            loadKycPendingData(); // Tải lại danh sách KYC chờ duyệt
+        if (response.ok) {
+            showToast(status === 'APPROVED' ? 'Đã duyệt KYC' : 'Đã từ chối KYC');
+            loadKYCPending();
+            loadDashboard();
+        } else {
+            showToast('Có lỗi xảy ra', 'error');
         }
     } catch (error) {
-        console.error('Lỗi khi duyệt KYC:', error);
+        showToast('Có lỗi xảy ra', 'error');
     }
 }
 
-// Hàm khởi tạo
-function init() {
-    if (!checkAuth()) return;
+// Load User Detail
+async function loadUserDetail() {
+    const userId = document.getElementById('userIdInput').value;
+    if (!userId) {
+        showToast('Vui lòng nhập mã người dùng', 'error');
+        return;
+    }
 
-    loadUserInfo();
-
-    // Gắn sự kiện cho nút đăng xuất
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-
-    // Gắn sự kiện cho các liên kết điều hướng
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const sectionId = link.getAttribute('data-section');
-            switchSection(sectionId);
+    try {
+        const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
-    });
 
-    // Gắn sự kiện cho nút lọc người dùng
-    document.getElementById('filterUsersBtn').addEventListener('click', loadUsersData);
+        if (response.ok) {
+            const result = await response.json();
+            const user = result.data;
 
-    // Gắn sự kiện cho nút duyệt KYC
-    document.getElementById('approveKycBtn').addEventListener('click', approveKyc);
+            const content = document.getElementById('userDetailContent');
+            content.innerHTML = `
+                <div class="user-detail-card">
+                    <div class="user-detail-header">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-detail-info">
+                            <h3>${user.HoTen || user.TenDangNhap}</h3>
+                            <div class="user-meta">
+                                <span class="badge ${getBadgeClass(user.VaiTro)}">${user.VaiTro}</span>
+                                <span class="badge ${user.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.TrangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}</span>
+                            </div>
+                        </div>
+                    </div>
 
-    // Mặc định hiển thị trang tổng quan
-    switchSection('dashboard');
+                    <div class="user-detail-body">
+                        <div class="detail-item">
+                            <label>Mã người dùng</label>
+                            <div class="value">${user.MaNguoiDung}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Tên đăng nhập</label>
+                            <div class="value">${user.TenDangNhap}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Họ tên</label>
+                            <div class="value">${user.HoTen || 'Chưa cập nhật'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email</label>
+                            <div class="value">${user.Email || 'Chưa cập nhật'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Vai trò</label>
+                            <div class="value">${user.VaiTro}</div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Ngày tạo</label>
+                            <div class="value">${new Date(user.NgayTao).toLocaleString('vi-VN')}</div>
+                        </div>
+                    </div>
+
+                    <div class="user-detail-actions">
+                        <button class="btn ${user.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockUser(${user.MaNguoiDung}, ${user.TrangThai === 'ACTIVE'})">
+                            <i class="fas fa-${user.TrangThai === 'ACTIVE' ? 'lock' : 'lock-open'}"></i>
+                            ${user.TrangThai === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            const content = document.getElementById('userDetailContent');
+            content.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-user-slash"></i>
+                    <p>Không tìm thấy người dùng với mã ${userId}</p>
+                </div>
+            `;
+            showToast('Không tìm thấy người dùng', 'error');
+        }
+    } catch (error) {
+        showToast('Có lỗi xảy ra', 'error');
+    }
 }
 
-// Khởi chạy khi trang tải xong
-document.addEventListener('DOMContentLoaded', init);
+// Filter users when select changes
+document.getElementById('roleFilter').addEventListener('change', loadUsers);
+document.getElementById('statusFilter').addEventListener('change', loadUsers);
+
+// Load Accounts
+async function loadAccounts() {
+    try {
+        const response = await fetch(`${API_URL}/admin/accounts`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            const accounts = result.data || [];
+
+            const tbody = document.getElementById('accountsTableBody');
+            tbody.innerHTML = '';
+
+            if (accounts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Không có tài khoản</td></tr>';
+                return;
+            }
+
+            accounts.forEach(acc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${acc.MaTaiKhoan}</td>
+                    <td>${acc.MaKhachHang}</td>
+                    <td>${acc.SoTaiKhoan}</td>
+                    <td>${new Intl.NumberFormat('vi-VN').format(acc.SoDu)} VNĐ</td>
+                    <td><span class="badge ${acc.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${acc.TrangThai}</span></td>
+                    <td>
+                        <button class="btn ${acc.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockAccount(${acc.MaTaiKhoan}, ${acc.TrangThai === 'ACTIVE'})">
+                            ${acc.TrangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            showToast('Không thể tải danh sách tài khoản', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading accounts:', error);
+        showToast('Lỗi kết nối server', 'error');
+    }
+}
+
+// Lock/Unlock Account
+async function lockAccount(accountId, shouldLock) {
+    try {
+        const response = await fetch(`${API_URL}/admin/accounts/${accountId}/lock`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                khoa: shouldLock
+            })
+        });
+
+        if (response.ok) {
+            showToast(shouldLock ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản');
+            loadAccounts();
+        } else {
+            showToast('Có lỗi xảy ra', 'error');
+        }
+    } catch (error) {
+        showToast('Có lỗi xảy ra', 'error');
+    }
+}
+
+// Load initial data
+loadDashboard();

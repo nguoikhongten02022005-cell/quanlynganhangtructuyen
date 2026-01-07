@@ -1,5 +1,5 @@
 // Địa chỉ API
-const API_BASE_URL = 'https://localhost:7079/api';
+const API_BASE_URL = 'https://localhost:5001/api';
 
 // Kiểm tra đăng nhập
 function kiemTraDangNhap() {

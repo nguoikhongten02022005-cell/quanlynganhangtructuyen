@@ -18,5 +18,17 @@ namespace BLL.Services
 
         // Lấy thống kê dashboard
         Task<AdminDashboardDTO> LayThongKeDashboardAsync();
+
+        // Reset mật khẩu người dùng (chỉ Admin)
+        Task ResetMatKhauAsync(int maNguoiDung, string matKhauMoi);
+
+        // Lấy danh sách tài khoản ngân hàng
+        Task<List<TaiKhoanDTO>> LayDanhSachTaiKhoanAsync();
+
+        // Lấy chi tiết tài khoản ngân hàng
+        Task<TaiKhoanDTO?> LayChiTietTaiKhoanAsync(int maTaiKhoan);
+
+        // Khóa/Mở tài khoản ngân hàng
+        Task KhoaMoKhoaTaiKhoanNganHangAsync(int maTaiKhoan, bool khoa);
     }
 }

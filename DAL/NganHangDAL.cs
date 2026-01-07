@@ -1,25 +1,22 @@
-﻿using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace DAL;
 
+/// <summary>
+/// Data Access Layer cho kết nối database
+/// </summary>
 public class NganHangDAL
 {
-    private readonly string _connectionString;
+    private readonly NganHangContext _context;
 
-    public NganHangDAL(string connectionString)
+    public NganHangDAL(NganHangContext context)
     {
-        _connectionString = connectionString;
-    }
-
-    public SqlConnection GetConnection()
-    {
-        return new SqlConnection(_connectionString);
+        _context = context;
     }
 
     public async Task<SqlConnection> GetOpenConnectionAsync()
     {
-        var conn = new SqlConnection(_connectionString);
+        var conn = new SqlConnection(_context.ConnectionString);
         await conn.OpenAsync();
         return conn;
     }

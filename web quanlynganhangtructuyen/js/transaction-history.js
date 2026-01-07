@@ -1,5 +1,5 @@
 // Địa chỉ API
-const API_URL = 'https://localhost:7079/api';
+const API_URL = 'https://localhost:5001/api';
 
 // Biến phân trang
 let currentPage = 1;

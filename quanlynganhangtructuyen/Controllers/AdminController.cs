@@ -2,14 +2,13 @@ using BLL.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Model.Requests;
-using System.Threading.Tasks;
 
 namespace quanlynganhangtructuyen.Controllers
 {
     [ApiController]
     [Route("api/admin")]
     [Authorize(Roles = "ADMIN,STAFF")]
-    public class AdminController : ControllerBase
+    public class AdminController : BaseController
     {
         private readonly IUserService _dichVuNguoiDung;
         private readonly IKhachHangService _dichVuKhachHang;
@@ -37,7 +36,7 @@ namespace quanlynganhangtructuyen.Controllers
             }
             catch (Exception ex)
             {
-                return NotFound(new { success = false, message = ex.Message });
+                return NotFound(ex.Message);
             }
         }
 
@@ -51,7 +50,7 @@ namespace quanlynganhangtructuyen.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return ThatBai(ex.Message);
             }
         }
 
@@ -65,7 +64,7 @@ namespace quanlynganhangtructuyen.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return ThatBai(ex.Message);
             }
         }
 
@@ -75,7 +74,6 @@ namespace quanlynganhangtructuyen.Controllers
             try
             {
                 await _dichVuNguoiDung.KhoaMoKhoaTaiKhoanAsync(id, yeuCau.Khoa);
-
                 return Ok(new
                 {
                     thongBao = yeuCau.Khoa ? "Đã khóa tài khoản thành công." : "Đã mở khóa tài khoản thành công.",
@@ -85,7 +83,7 @@ namespace quanlynganhangtructuyen.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { thongBao = ex.Message });
+                return ThatBai(ex.Message);
             }
         }
 
@@ -99,7 +97,71 @@ namespace quanlynganhangtructuyen.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { thongBao = ex.Message });
+                return ThatBai(ex.Message);
+            }
+        }
+
+        [HttpPost("users/{id}/reset-password")]
+        [Authorize(Roles = "ADMIN")]
+        public async Task<IActionResult> ResetMatKhau(int id, [FromBody] ResetPasswordRequest request)
+        {
+            try
+            {
+                await _dichVuNguoiDung.ResetMatKhauAsync(id, request.MatKhauMoi);
+                return Ok(new { success = true, message = "Reset mật khẩu thành công" });
+            }
+            catch (Exception ex)
+            {
+                return ThatBai(ex.Message);
+            }
+        }
+
+        [HttpGet("accounts")]
+        public async Task<IActionResult> LayDanhSachTaiKhoan()
+        {
+            try
+            {
+                var danhSach = await _dichVuNguoiDung.LayDanhSachTaiKhoanAsync();
+                return Ok(new { success = true, data = danhSach, tongSo = danhSach.Count });
+            }
+            catch (Exception ex)
+            {
+                return ThatBai(ex.Message);
+            }
+        }
+
+        [HttpGet("accounts/{id}")]
+        public async Task<IActionResult> LayChiTietTaiKhoan(int id)
+        {
+            try
+            {
+                var taiKhoan = await _dichVuNguoiDung.LayChiTietTaiKhoanAsync(id);
+                if (taiKhoan == null)
+                    return KhongTimThay("Tài khoản không tồn tại.");
+                return Ok(new { success = true, data = taiKhoan });
+            }
+            catch (Exception ex)
+            {
+                return ThatBai(ex.Message);
+            }
+        }
+
+        [HttpPut("accounts/{id}/lock")]
+        public async Task<IActionResult> KhoaTaiKhoanNganHang(int id, [FromBody] KhoaTaiKhoanRequest yeuCau)
+        {
+            try
+            {
+                await _dichVuNguoiDung.KhoaMoKhoaTaiKhoanNganHangAsync(id, yeuCau.Khoa);
+                return Ok(new
+                {
+                    thongBao = yeuCau.Khoa ? "Đã khóa tài khoản ngân hàng." : "Đã mở khóa tài khoản ngân hàng.",
+                    maTaiKhoan = id,
+                    trangThaiMoi = yeuCau.Khoa ? "LOCKED" : "ACTIVE"
+                });
+            }
+            catch (Exception ex)
+            {
+                return ThatBai(ex.Message);
             }
         }
     }

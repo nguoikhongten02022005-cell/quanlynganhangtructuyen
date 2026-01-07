@@ -1,5 +1,4 @@
-using DAL;
-using Microsoft.Data.SqlClient;
+using DAL.Interfaces;
 using Model.Requests;
 using Model.DTOs;
 using System;
@@ -9,162 +8,107 @@ namespace BLL.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly NganHangDAL _db;
+        private readonly INguoiDungRepository _nguoiDungRepo;
+        private readonly IKhachHangRepository _khachHangRepo;
+        private readonly ITaiKhoanRepository _taiKhoanRepo;
 
-        public AuthService(NganHangDAL db)
+        public AuthService(
+            INguoiDungRepository nguoiDungRepo,
+            IKhachHangRepository khachHangRepo,
+            ITaiKhoanRepository taiKhoanRepo)
         {
-            _db = db;
+            _nguoiDungRepo = nguoiDungRepo;
+            _khachHangRepo = khachHangRepo;
+            _taiKhoanRepo = taiKhoanRepo;
         }
 
         public async Task<object> DangKyKhachHangAsync(DangKyRequest request)
         {
-            await using var conn = await _db.GetOpenConnectionAsync();
-            await using var transaction = conn.BeginTransaction();
-
-            try
+            if (await _nguoiDungRepo.KiemTraTonTaiTenDangNhapAsync(request.TenDangNhap))
             {
-                // 1. Kiểm tra trùng tên đăng nhập
-                var checkCmd = new SqlCommand("SELECT COUNT(*) FROM NguoiDung WHERE TenDangNhap = @TenDangNhap", conn, transaction);
-                checkCmd.Parameters.AddWithValue("@TenDangNhap", request.TenDangNhap);
-                var count = (int)await checkCmd.ExecuteScalarAsync();
-                if (count > 0)
-                {
-                    throw new Exception("Tên đăng nhập đã tồn tại.");
-                }
-
-                // 2.1: Tạo User (NguoiDung)
-                var insertUserCmd = new SqlCommand(@"
-                    INSERT INTO NguoiDung (TenDangNhap, MatKhauHash, VaiTro, NgayTao, TrangThai)
-                    OUTPUT INSERTED.MaNguoiDung
-                    VALUES (@TenDangNhap, @MatKhauHash, @VaiTro, @NgayTao, @TrangThai)", conn, transaction);
-                
-                insertUserCmd.Parameters.AddWithValue("@TenDangNhap", request.TenDangNhap);
-                insertUserCmd.Parameters.AddWithValue("@MatKhauHash", BCrypt.Net.BCrypt.HashPassword(request.MatKhau));
-                insertUserCmd.Parameters.AddWithValue("@VaiTro", "CUSTOMER");
-                insertUserCmd.Parameters.AddWithValue("@NgayTao", DateTime.Now);
-                insertUserCmd.Parameters.AddWithValue("@TrangThai", "ACTIVE");
-                
-                var maNguoiDung = (int)await insertUserCmd.ExecuteScalarAsync();
-
-                // 2.2: Tạo Khách Hàng
-                var insertKhachCmd = new SqlCommand(@"
-                    INSERT INTO KhachHang (MaNguoiDung, HoTen, Email, SoDienThoai, TrangThaiKYC)
-                    OUTPUT INSERTED.MaKhachHang
-                    VALUES (@MaNguoiDung, @HoTen, @Email, @SoDienThoai, @TrangThaiKYC)", conn, transaction);
-                
-                insertKhachCmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
-                insertKhachCmd.Parameters.AddWithValue("@HoTen", request.HoTen);
-                insertKhachCmd.Parameters.AddWithValue("@Email", request.Email ?? (object)DBNull.Value);
-                insertKhachCmd.Parameters.AddWithValue("@SoDienThoai", request.SoDienThoai ?? (object)DBNull.Value);
-                insertKhachCmd.Parameters.AddWithValue("@TrangThaiKYC", "NONE");
-                
-                var maKhachHang = (int)await insertKhachCmd.ExecuteScalarAsync();
-
-                // 2.3: Tạo Tài Khoản
-                var soTaiKhoan = await TaoSoTaiKhoanAsync(conn, transaction);
-                var insertTaiKhoanCmd = new SqlCommand(@"
-                    INSERT INTO TaiKhoan (MaKhachHang, SoTaiKhoan, SoDu, TrangThai)
-                    VALUES (@MaKhachHang, @SoTaiKhoan, @SoDu, @TrangThai)", conn, transaction);
-                
-                insertTaiKhoanCmd.Parameters.AddWithValue("@MaKhachHang", maKhachHang);
-                insertTaiKhoanCmd.Parameters.AddWithValue("@SoTaiKhoan", soTaiKhoan);
-                insertTaiKhoanCmd.Parameters.AddWithValue("@SoDu", 0);
-                insertTaiKhoanCmd.Parameters.AddWithValue("@TrangThai", "ACTIVE");
-                
-                await insertTaiKhoanCmd.ExecuteNonQueryAsync();
-
-                await transaction.CommitAsync();
-
-                return new
-                {
-                    thongBao = "Đăng ký tài khoản thành công.",
-                    maNguoiDung = maNguoiDung,
-                    maKhachHang = maKhachHang,
-                    soTaiKhoan = soTaiKhoan,
-                    trangThaiKyc = "NONE"
-                };
+                throw new Exception("Tên đăng nhập đã tồn tại.");
             }
-            catch
+
+            string matKhauHash = BCrypt.Net.BCrypt.HashPassword(request.MatKhau);
+
+            int maNguoiDung = await _nguoiDungRepo.ThemNguoiDungAsync(
+                request.TenDangNhap,
+                matKhauHash,
+                "CUSTOMER",
+                "ACTIVE"
+            );
+
+            int maKhachHang = await _khachHangRepo.ThemKhachHangAsync(
+                maNguoiDung,
+                request.HoTen,
+                request.Email,
+                request.SoDienThoai,
+                "NONE"
+            );
+
+            Random random = new Random();
+            string soTaiKhoan = random.Next(100000000, 999999999).ToString();
+
+            while (await _taiKhoanRepo.KiemTraSoTaiKhoanDaTonTaiAsync(soTaiKhoan))
             {
-                await transaction.RollbackAsync();
-                throw;
+                soTaiKhoan = random.Next(100000000, 999999999).ToString();
             }
+
+            await _taiKhoanRepo.ThemTaiKhoanAsync(
+                maKhachHang,
+                soTaiKhoan,
+                0,
+                "ACTIVE"
+            );
+
+            return new
+            {
+                thongBao = "Đăng ký thành công.",
+                maNguoiDung = maNguoiDung,
+                maKhachHang = maKhachHang,
+                soTaiKhoan = soTaiKhoan
+            };
         }
 
         public async Task<NguoiDungDTO> DangNhapAsync(string tenDangNhap, string matKhau)
         {
-            await using var conn = await _db.GetOpenConnectionAsync();
-            var cmd = new SqlCommand("SELECT MaNguoiDung, TenDangNhap, MatKhauHash, VaiTro, TrangThai, NgayTao FROM NguoiDung WHERE TenDangNhap = @TenDangNhap", conn);
-            cmd.Parameters.AddWithValue("@TenDangNhap", tenDangNhap);
-            
-            await using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync())
+            var nguoiDung = await _nguoiDungRepo.GetNguoiDungByTenDangNhapAsync(tenDangNhap);
+
+            if (nguoiDung == null)
             {
-                throw new Exception("Tài khoản hoặc mật khẩu không chính xác.");
+                throw new Exception("Tài khoản hoặc mật khẩu không đúng.");
             }
 
-            var matKhauHash = reader.GetString(2);
-            if (!BCrypt.Net.BCrypt.Verify(matKhau, matKhauHash))
+            if (!BCrypt.Net.BCrypt.Verify(matKhau, nguoiDung.MatKhauHash))
             {
-                throw new Exception("Tài khoản hoặc mật khẩu không chính xác.");
+                throw new Exception("Tài khoản hoặc mật khẩu không đúng.");
             }
 
-            var trangThai = reader.GetString(4);
-            if (trangThai != "ACTIVE")
+            if (nguoiDung.TrangThai != "ACTIVE")
             {
-                throw new Exception("Tài khoản này đã bị khóa. Vui lòng liên hệ ngân hàng.");
+                throw new Exception("Tài khoản đã bị khóa.");
             }
 
-            return new NguoiDungDTO
-            {
-                MaNguoiDung = reader.GetInt32(0),
-                TenDangNhap = reader.GetString(1),
-                MatKhauHash = matKhauHash,
-                VaiTro = reader.GetString(3),
-                TrangThai = trangThai,
-                NgayTao = reader.GetDateTime(5)
-            };
+            return nguoiDung;
         }
 
         public async Task DoiMatKhauAsync(int maNguoiDung, string matKhauCu, string matKhauMoi)
         {
-            await using var conn = await _db.GetOpenConnectionAsync();
-            
-            // Lấy mật khẩu hiện tại
-            var selectCmd = new SqlCommand("SELECT MatKhauHash FROM NguoiDung WHERE MaNguoiDung = @MaNguoiDung", conn);
-            selectCmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
-            
-            var matKhauHash = await selectCmd.ExecuteScalarAsync() as string;
-            if (matKhauHash == null)
+            var matKhauHashHienTai = await _nguoiDungRepo.GetMatKhauHashByIdAsync(maNguoiDung);
+
+            if (matKhauHashHienTai == null)
             {
-                throw new Exception("Người dùng không tồn tại.");
+                throw new Exception("Không tìm thấy tài khoản.");
             }
 
-            if (!BCrypt.Net.BCrypt.Verify(matKhauCu, matKhauHash))
+            if (!BCrypt.Net.BCrypt.Verify(matKhauCu, matKhauHashHienTai))
             {
                 throw new Exception("Mật khẩu cũ không đúng.");
             }
 
-            // Cập nhật mật khẩu mới
-            var updateCmd = new SqlCommand("UPDATE NguoiDung SET MatKhauHash = @MatKhauHash WHERE MaNguoiDung = @MaNguoiDung", conn);
-            updateCmd.Parameters.AddWithValue("@MatKhauHash", BCrypt.Net.BCrypt.HashPassword(matKhauMoi));
-            updateCmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
-            
-            await updateCmd.ExecuteNonQueryAsync();
-        }
+            string matKhauHashMoi = BCrypt.Net.BCrypt.HashPassword(matKhauMoi);
 
-        private async Task<string> TaoSoTaiKhoanAsync(SqlConnection conn, SqlTransaction transaction)
-        {
-            while (true)
-            {
-                string so = "10" + Random.Shared.NextInt64(100000000000, 999999999999).ToString();
-                
-                var checkCmd = new SqlCommand("SELECT COUNT(*) FROM TaiKhoan WHERE SoTaiKhoan = @SoTaiKhoan", conn, transaction);
-                checkCmd.Parameters.AddWithValue("@SoTaiKhoan", so);
-                
-                var count = (int)await checkCmd.ExecuteScalarAsync();
-                if (count == 0) return so;
-            }
+            await _nguoiDungRepo.CapNhatMatKhauAsync(maNguoiDung, matKhauHashMoi);
         }
     }
 }
