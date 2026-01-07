@@ -66,7 +66,7 @@ function saveUserData(data) {
 
 // Redirect based on role
 function redirectByRole(role) {
-    const redirect = role === 'CUSTOMER' ? 'dashboard.html' : 'admin-dashboard.html';
+    const redirect = role === 'CUSTOMER' ? 'html/dashboard.html' : 'html/admin-dashboard.html';
     setTimeout(() => window.location.href = redirect, 1000);
 }
 
@@ -149,7 +149,7 @@ async function handleRegister(event) {
     try {
         await callAPI('/auth/register', data);
         showToast('Đăng ký thành công!', 'success');
-        setTimeout(() => window.location.href = 'index.html', 1500);
+        setTimeout(() => window.location.href = '../index.html', 1500);
     } finally {
         btn.classList.remove('loading');
     }
