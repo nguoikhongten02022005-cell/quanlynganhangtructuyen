@@ -14,7 +14,7 @@ function kiemTraDangNhap() {
     
     if (!token) {
         // Chưa đăng nhập -> chuyển về trang login
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
         return false;
     }
     
@@ -41,7 +41,7 @@ function dangXuat() {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('fullName');
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
     }
 }
 

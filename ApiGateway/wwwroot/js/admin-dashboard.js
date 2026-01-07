@@ -21,7 +21,7 @@ function showToast(message, type = 'success') {
 
 // Check login
 if (!token) {
-    window.location.href = 'index.html';
+    window.location.href = '../index.html';
 }
 
 // Tab switching
@@ -51,7 +51,7 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
 // Logout
 document.getElementById('logoutBtn').addEventListener('click', () => {
     localStorage.removeItem('token');
-    window.location.href = 'index.html';
+    window.location.href = '../index.html';
 });
 
 // Load Dashboard
