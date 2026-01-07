@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Tin Cá Nhân</title>
+    <link rel="stylesheet" href="../css/customer-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>VCB<span>Digibank</span></h1>
+            </div>
+            <div class="user-info">
+                <span class="welcome">Xin chào, <strong id="userName">Khách hàng</strong></span>
+                <button onclick="dangXuat()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </header>
+
+        <!-- Menu điều hướng -->
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fas fa-home"></i> Trang chủ
+            </a>
+            <a href="transfer.html" class="nav-item">
+                <i class="fas fa-exchange-alt"></i> Chuyển tiền
+            </a>
+            <a href="transaction-history.html" class="nav-item">
+                <i class="fas fa-history"></i> Lịch sử GD
+            </a>
+            <a href="customer-profile.html" class="nav-item active">
+                <i class="fas fa-user"></i> Thông tin cá nhân
+            </a>
+        </nav>
+
+        <!-- Nội dung chính -->
+        <main class="main-content">
+            <h2>Thông tin cá nhân</h2>
+            
+            <div class="cards">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-user-circle"></i>
+                        <h3>Thông tin khách hàng</h3>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Họ và tên:</strong> <span id="hoTen">---</span></p>
+                        <p><strong>Email:</strong> <span id="email">---</span></p>
+                        <p><strong>Số điện thoại:</strong> <span id="soDienThoai">---</span></p>
+                        <p><strong>Số CCCD:</strong> <span id="soCCCD">---</span></p>
+                        <p><strong>Trạng thái KYC:</strong> <span id="trangThaiKyc" class="kyc-status">---</span></p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="customer-kyc.html" class="btn-link">Gửi xác minh KYC →</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 VCB Digibank - Ngân hàng trực tuyến</p>
+        </footer>
+    </div>
+    
+    <script src="../js/customer-profile.js" defer></script>
+</body>
+</html>

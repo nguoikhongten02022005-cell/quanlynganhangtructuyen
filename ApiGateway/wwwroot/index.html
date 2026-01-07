@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCB Digibank - Đăng nhập</title>
+    <link rel="stylesheet" href="../css/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background"></div>
+
+    <!-- Thông báo -->
+    <div class="toast" id="toast">
+        <span class="toast-icon"><i class="fas fa-check-circle"></i></span>
+        <span class="toast-message" id="toastMessage">Thông báo</span>
+    </div>
+
+    <div class="auth-container">
+        <h1 class="title">VCB<span style="font-weight: normal;">Digibank</span></h1>
+        <p class="subtitle">Xin kính chào Quý khách</p>
+
+        <!-- Form Đăng nhập -->
+        <form id="loginForm" class="auth-form active">
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="input-icon-left"><i class="fas fa-user"></i></span>
+                    <input type="text" placeholder="Tên đăng nhập" id="loginUsername" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="input-icon-left"><i class="fas fa-lock"></i></span>
+                    <input type="password" placeholder="Mật khẩu" id="loginPassword" required>
+                    <span class="input-icon" onclick="togglePassword('loginPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="forgot-password">
+                <a href="change-password.html">Đổi mật khẩu</a>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            </button>
+
+            <div class="switch-form">
+                Chưa có tài khoản? <a href="register.html">Đăng ký ngay</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="../js/index.js" defer></script>
+</body>
+</html>
