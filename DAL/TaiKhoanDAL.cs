@@ -117,13 +117,25 @@ public class TaiKhoanDAL
     public async Task<int?> GetMaTaiKhoanBySoTaiKhoanAsync(string soTaiKhoan)
     {
         await using var conn = await GetOpenConnectionAsync();
-        var cmd = new SqlCommand("SELECT MaTaiKhoan, TrangThai FROM TaiKhoan WHERE SoTaiKhoan = @SoTaiKhoan", conn);
+        var cmd = new SqlCommand("SELECT MaTaiKhoan FROM TaiKhoan WHERE SoTaiKhoan = @SoTaiKhoan", conn);
         cmd.Parameters.AddWithValue("@SoTaiKhoan", soTaiKhoan);
 
         await using var reader = await cmd.ExecuteReaderAsync();
         if (!await reader.ReadAsync()) return null;
 
         return reader.GetInt32(0);
+    }
+
+    public async Task<(int MaTaiKhoan, string TrangThai)?> GetTrangThaiTaiKhoanByMaTaiKhoanAsync(int maTaiKhoan)
+    {
+        await using var conn = await GetOpenConnectionAsync();
+        var cmd = new SqlCommand("SELECT MaTaiKhoan, TrangThai FROM TaiKhoan WHERE MaTaiKhoan = @MaTaiKhoan", conn);
+        cmd.Parameters.AddWithValue("@MaTaiKhoan", maTaiKhoan);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync()) return null;
+
+        return (reader.GetInt32(0), reader.GetString(1));
     }
 
     public async Task<(int MaTaiKhoan, decimal SoDu, string TrangThai)?> GetTaiKhoanInfoByMaNguoiDungAsync(int maNguoiDung)

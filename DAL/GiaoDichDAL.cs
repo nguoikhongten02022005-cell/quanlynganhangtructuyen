@@ -142,11 +142,13 @@ public class GiaoDichDAL
     {
         await using var conn = await GetOpenConnectionAsync();
         var cmd = new SqlCommand(@"
-            SELECT MaGiaoDich, SoTien, NoiDung, NgayGiaoDich, TrangThai,
-                   SoTaiKhoanGui, SoTaiKhoanNhan
-            FROM GiaoDich
-            WHERE MaGiaoDich = @MaGiaoDich
-              AND (SoTaiKhoanGui = @SoTaiKhoan OR SoTaiKhoanNhan = @SoTaiKhoan)", conn);
+            SELECT gd.MaGiaoDich, gd.SoTien, gd.NoiDung, gd.NgayGiaoDich, gd.TrangThai,
+                   tkGui.SoTaiKhoan AS SoTaiKhoanGui, tkNhan.SoTaiKhoan AS SoTaiKhoanNhan
+            FROM GiaoDich gd
+            INNER JOIN TaiKhoan tkGui ON gd.MaTaiKhoanGui = tkGui.MaTaiKhoan
+            INNER JOIN TaiKhoan tkNhan ON gd.MaTaiKhoanNhan = tkNhan.MaTaiKhoan
+            WHERE gd.MaGiaoDich = @MaGiaoDich
+              AND (tkGui.SoTaiKhoan = @SoTaiKhoan OR tkNhan.SoTaiKhoan = @SoTaiKhoan)", conn);
 
         cmd.Parameters.AddWithValue("@MaGiaoDich", maGiaoDich);
         cmd.Parameters.AddWithValue("@SoTaiKhoan", soTaiKhoan);
@@ -171,9 +173,10 @@ public class GiaoDichDAL
         await using var conn = await GetOpenConnectionAsync();
         var cmd = new SqlCommand(@"
             SELECT COUNT(*)
-            FROM GiaoDich
-            WHERE SoTaiKhoanNhan = @SoTaiKhoan
-              AND TrangThai = 'SUCCESS'", conn);
+            FROM GiaoDich gd
+            INNER JOIN TaiKhoan tk ON gd.MaTaiKhoanNhan = tk.MaTaiKhoan
+            WHERE tk.SoTaiKhoan = @SoTaiKhoan
+              AND gd.TrangThai = 'SUCCESS'", conn);
         cmd.Parameters.AddWithValue("@SoTaiKhoan", soTaiKhoan);
         return (int)await cmd.ExecuteScalarAsync();
     }
@@ -182,12 +185,14 @@ public class GiaoDichDAL
     {
         await using var conn = await GetOpenConnectionAsync();
         var cmd = new SqlCommand(@"
-            SELECT MaGiaoDich, SoTien, NoiDung, NgayGiaoDich, TrangThai,
-                   SoTaiKhoanGui, SoTaiKhoanNhan
-            FROM GiaoDich
-            WHERE SoTaiKhoanNhan = @SoTaiKhoan
-              AND TrangThai = 'SUCCESS'
-            ORDER BY NgayGiaoDich DESC
+            SELECT gd.MaGiaoDich, gd.SoTien, gd.NoiDung, gd.NgayGiaoDich, gd.TrangThai,
+                   tkGui.SoTaiKhoan AS SoTaiKhoanGui, tkNhan.SoTaiKhoan AS SoTaiKhoanNhan
+            FROM GiaoDich gd
+            INNER JOIN TaiKhoan tkGui ON gd.MaTaiKhoanGui = tkGui.MaTaiKhoan
+            INNER JOIN TaiKhoan tkNhan ON gd.MaTaiKhoanNhan = tkNhan.MaTaiKhoan
+            WHERE tkNhan.SoTaiKhoan = @SoTaiKhoan
+              AND gd.TrangThai = 'SUCCESS'
+            ORDER BY gd.NgayGiaoDich DESC
             OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY", conn);
 
         cmd.Parameters.AddWithValue("@SoTaiKhoan", soTaiKhoan);
@@ -214,10 +219,11 @@ public class GiaoDichDAL
         return danhSach;
     }
 
-    public async Task<string?> ChuyenTienAsync(int maTaiKhoanGui, int maTaiKhoanNhan, decimal soTien, string noiDung)
+    public async Task<string?> ChuyenTienAsync(int maGiaoDich, int maTaiKhoanGui, int maTaiKhoanNhan, decimal soTien, string noiDung)
     {
         await using var conn = await GetOpenConnectionAsync();
-        var cmd = new SqlCommand("EXEC SP_ChuyenTien @MaTaiKhoanGui, @MaTaiKhoanNhan, @SoTien, @NoiDung", conn);
+        var cmd = new SqlCommand("EXEC SP_ChuyenTien @MaGiaoDich, @MaTaiKhoanGui, @MaTaiKhoanNhan, @SoTien, @NoiDung", conn);
+        cmd.Parameters.AddWithValue("@MaGiaoDich", maGiaoDich);
         cmd.Parameters.AddWithValue("@MaTaiKhoanGui", maTaiKhoanGui);
         cmd.Parameters.AddWithValue("@MaTaiKhoanNhan", maTaiKhoanNhan);
         cmd.Parameters.AddWithValue("@SoTien", soTien);
