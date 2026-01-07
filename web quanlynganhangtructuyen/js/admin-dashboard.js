@@ -40,6 +40,8 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
             loadDashboard();
         } else if (sectionId === 'users') {
             loadUsers();
+        } else if (sectionId === 'accounts') {
+            loadAccounts();
         } else if (sectionId === 'kyc-pending') {
             loadKYCPending();
         }
@@ -338,6 +340,78 @@ async function loadUserDetail() {
 // Filter users when select changes
 document.getElementById('roleFilter').addEventListener('change', loadUsers);
 document.getElementById('statusFilter').addEventListener('change', loadUsers);
+
+// Load Accounts
+async function loadAccounts() {
+    try {
+        const response = await fetch(`${API_URL}/admin/accounts`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            const accounts = result.data || [];
+
+            const tbody = document.getElementById('accountsTableBody');
+            tbody.innerHTML = '';
+
+            if (accounts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Không có tài khoản</td></tr>';
+                return;
+            }
+
+            accounts.forEach(acc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${acc.MaTaiKhoan}</td>
+                    <td>${acc.MaKhachHang}</td>
+                    <td>${acc.SoTaiKhoan}</td>
+                    <td>${new Intl.NumberFormat('vi-VN').format(acc.SoDu)} VNĐ</td>
+                    <td><span class="badge ${acc.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${acc.TrangThai}</span></td>
+                    <td>
+                        <button class="btn ${acc.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockAccount(${acc.MaTaiKhoan}, ${acc.TrangThai === 'ACTIVE'})">
+                            ${acc.TrangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            showToast('Không thể tải danh sách tài khoản', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading accounts:', error);
+        showToast('Lỗi kết nối server', 'error');
+    }
+}
+
+// Lock/Unlock Account
+async function lockAccount(accountId, shouldLock) {
+    try {
+        const response = await fetch(`${API_URL}/admin/accounts/${accountId}/lock`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                khoa: shouldLock
+            })
+        });
+
+        if (response.ok) {
+            showToast(shouldLock ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản');
+            loadAccounts();
+        } else {
+            showToast('Có lỗi xảy ra', 'error');
+        }
+    } catch (error) {
+        showToast('Có lỗi xảy ra', 'error');
+    }
+}
 
 // Load initial data
 loadDashboard();

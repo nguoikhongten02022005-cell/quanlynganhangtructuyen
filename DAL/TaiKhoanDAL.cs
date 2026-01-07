@@ -141,4 +141,62 @@ public class TaiKhoanDAL
 
         return (reader.GetInt32(0), reader.GetDecimal(1), reader.GetString(2));
     }
+
+    public async Task<List<TaiKhoanDTO>> GetAllTaiKhoanAsync()
+    {
+        var danhSach = new List<TaiKhoanDTO>();
+        await using var conn = await GetOpenConnectionAsync();
+        var cmd = new SqlCommand(@"
+            SELECT tk.MaTaiKhoan, tk.MaKhachHang, tk.SoTaiKhoan, tk.SoDu, tk.TrangThai,
+                   kh.HoTen, kh.SoCCCD
+            FROM TaiKhoan tk
+            INNER JOIN KhachHang kh ON tk.MaKhachHang = kh.MaKhachHang", conn);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            danhSach.Add(new TaiKhoanDTO
+            {
+                MaTaiKhoan = reader.GetInt32(0),
+                MaKhachHang = reader.GetInt32(1),
+                SoTaiKhoan = reader.GetString(2),
+                SoDu = reader.GetDecimal(3),
+                TrangThai = reader.GetString(4)
+            });
+        }
+        return danhSach;
+    }
+
+    public async Task<TaiKhoanDTO?> GetTaiKhoanByIdAsync(int maTaiKhoan)
+    {
+        await using var conn = await GetOpenConnectionAsync();
+        var cmd = new SqlCommand(@"
+            SELECT tk.MaTaiKhoan, tk.MaKhachHang, tk.SoTaiKhoan, tk.SoDu, tk.TrangThai,
+                   kh.HoTen, kh.SoCCCD
+            FROM TaiKhoan tk
+            INNER JOIN KhachHang kh ON tk.MaKhachHang = kh.MaKhachHang
+            WHERE tk.MaTaiKhoan = @MaTaiKhoan", conn);
+        cmd.Parameters.AddWithValue("@MaTaiKhoan", maTaiKhoan);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync()) return null;
+
+        return new TaiKhoanDTO
+        {
+            MaTaiKhoan = reader.GetInt32(0),
+            MaKhachHang = reader.GetInt32(1),
+            SoTaiKhoan = reader.GetString(2),
+            SoDu = reader.GetDecimal(3),
+            TrangThai = reader.GetString(4)
+        };
+    }
+
+    public async Task CapNhatTrangThaiAsync(int maTaiKhoan, string trangThai)
+    {
+        await using var conn = await GetOpenConnectionAsync();
+        var cmd = new SqlCommand("UPDATE TaiKhoan SET TrangThai = @TrangThai WHERE MaTaiKhoan = @MaTaiKhoan", conn);
+        cmd.Parameters.AddWithValue("@MaTaiKhoan", maTaiKhoan);
+        cmd.Parameters.AddWithValue("@TrangThai", trangThai);
+        await cmd.ExecuteNonQueryAsync();
+    }
 }

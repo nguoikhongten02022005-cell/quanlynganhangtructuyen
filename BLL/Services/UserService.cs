@@ -10,10 +10,12 @@ namespace BLL.Services
     public class UserService : IUserService
     {
         private readonly NguoiDungDAL _nguoiDungDAL;
+        private readonly TaiKhoanDAL _taiKhoanDAL;
 
-        public UserService(NguoiDungDAL nguoiDungDAL)
+        public UserService(NguoiDungDAL nguoiDungDAL, TaiKhoanDAL taiKhoanDAL)
         {
             _nguoiDungDAL = nguoiDungDAL;
+            _taiKhoanDAL = taiKhoanDAL;
         }
 
         public async Task<object> GetUsersAsync(string? role, string? status)
@@ -87,6 +89,26 @@ namespace BLL.Services
 
             var matKhauHash = BCrypt.Net.BCrypt.HashPassword(matKhauMoi);
             await _nguoiDungDAL.CapNhatMatKhauAsync(maNguoiDung, matKhauHash);
+        }
+
+        public async Task<List<TaiKhoanDTO>> LayDanhSachTaiKhoanAsync()
+        {
+            return await _taiKhoanDAL.GetAllTaiKhoanAsync();
+        }
+
+        public async Task<TaiKhoanDTO?> LayChiTietTaiKhoanAsync(int maTaiKhoan)
+        {
+            return await _taiKhoanDAL.GetTaiKhoanByIdAsync(maTaiKhoan);
+        }
+
+        public async Task KhoaMoKhoaTaiKhoanNganHangAsync(int maTaiKhoan, bool khoa)
+        {
+            var taiKhoan = await _taiKhoanDAL.GetTaiKhoanByIdAsync(maTaiKhoan);
+            if (taiKhoan == null)
+                throw new Exception("Tài khoản không tồn tại.");
+
+            var trangThaiMoi = khoa ? "LOCKED" : "ACTIVE";
+            await _taiKhoanDAL.CapNhatTrangThaiAsync(maTaiKhoan, trangThaiMoi);
         }
     }
 }

@@ -115,5 +115,54 @@ namespace quanlynganhangtructuyen.Controllers
                 return ThatBai(ex.Message);
             }
         }
+
+        [HttpGet("accounts")]
+        public async Task<IActionResult> LayDanhSachTaiKhoan()
+        {
+            try
+            {
+                var danhSach = await _dichVuNguoiDung.LayDanhSachTaiKhoanAsync();
+                return Ok(new { success = true, data = danhSach, tongSo = danhSach.Count });
+            }
+            catch (Exception ex)
+            {
+                return ThatBai(ex.Message);
+            }
+        }
+
+        [HttpGet("accounts/{id}")]
+        public async Task<IActionResult> LayChiTietTaiKhoan(int id)
+        {
+            try
+            {
+                var taiKhoan = await _dichVuNguoiDung.LayChiTietTaiKhoanAsync(id);
+                if (taiKhoan == null)
+                    return KhongTimThay("Tài khoản không tồn tại.");
+                return Ok(new { success = true, data = taiKhoan });
+            }
+            catch (Exception ex)
+            {
+                return ThatBai(ex.Message);
+            }
+        }
+
+        [HttpPut("accounts/{id}/lock")]
+        public async Task<IActionResult> KhoaTaiKhoanNganHang(int id, [FromBody] KhoaTaiKhoanRequest yeuCau)
+        {
+            try
+            {
+                await _dichVuNguoiDung.KhoaMoKhoaTaiKhoanNganHangAsync(id, yeuCau.Khoa);
+                return Ok(new
+                {
+                    thongBao = yeuCau.Khoa ? "Đã khóa tài khoản ngân hàng." : "Đã mở khóa tài khoản ngân hàng.",
+                    maTaiKhoan = id,
+                    trangThaiMoi = yeuCau.Khoa ? "LOCKED" : "ACTIVE"
+                });
+            }
+            catch (Exception ex)
+            {
+                return ThatBai(ex.Message);
+            }
+        }
     }
 }
