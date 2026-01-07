@@ -35,6 +35,13 @@ namespace quanlynganhangtructuyen.Controllers
                 string.IsNullOrWhiteSpace(req.HoTen))
                 return BadRequest(new { thongBao = "Thiếu thông tin tên đăng nhập, mật khẩu hoặc họ tên." });
 
+            // Validate độ dài và độ mạnh mật khẩu
+            if (req.MatKhau.Length < 6)
+                return BadRequest(new { thongBao = "Mật khẩu phải có ít nhất 6 ký tự." });
+
+            if (req.MatKhau.Length > 50)
+                return BadRequest(new { thongBao = "Mật khẩu không được quá 50 ký tự." });
+
             try
             {
                 var result = await _authService.DangKyKhachHangAsync(req);
@@ -85,6 +92,16 @@ namespace quanlynganhangtructuyen.Controllers
 
             if (string.IsNullOrWhiteSpace(req.MatKhauCu) || string.IsNullOrWhiteSpace(req.MatKhauMoi))
                 return BadRequest(new { thongBao = "Thiếu mật khẩu cũ hoặc mật khẩu mới." });
+
+            // Validate độ dài và độ mạnh mật khẩu mới
+            if (req.MatKhauMoi.Length < 6)
+                return BadRequest(new { thongBao = "Mật khẩu mới phải có ít nhất 6 ký tự." });
+
+            if (req.MatKhauMoi.Length > 50)
+                return BadRequest(new { thongBao = "Mật khẩu mới không được quá 50 ký tự." });
+
+            if (req.MatKhauCu == req.MatKhauMoi)
+                return BadRequest(new { thongBao = "Mật khẩu mới phải khác mật khẩu cũ." });
 
             try
             {
