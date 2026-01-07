@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCB Admin - Quản Lý Hệ Thống</title>
+    <link rel="stylesheet" href="../css/admin-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Toast notification -->
+    <div class="toast" id="toast">
+        <span class="toast-icon"><i class="fas fa-check-circle"></i></span>
+        <span class="toast-message" id="toastMessage">Thông báo</span>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <h1>VCB<span>Admin</span></h1>
+        <div class="user-info">
+            <span>Xin chào, <strong id="fullName">Admin</strong></span>
+            <button id="logoutBtn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </button>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-tabs">
+        <a href="#" class="nav-tab active" data-section="dashboard">
+            <i class="fas fa-home"></i> Tổng Quan
+        </a>
+        <a href="#" class="nav-tab" data-section="users">
+            <i class="fas fa-users"></i> Người Dùng
+        </a>
+        <a href="#" class="nav-tab" data-section="accounts">
+            <i class="fas fa-university"></i> Tài Khoản NH
+        </a>
+        <a href="#" class="nav-tab" data-section="kyc-pending">
+            <i class="fas fa-clock"></i> KYC Chờ Duyệt
+        </a>
+        <a href="#" class="nav-tab" data-section="user-detail">
+            <i class="fas fa-user-circle"></i> Chi Tiết User
+        </a>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <h2 class="section-title">Tổng Quan Hệ Thống</h2>
+            
+            <div class="card-grid">
+                <div class="info-card">
+                    <div class="card-icon blue">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Tổng Người Dùng</h3>
+                        <p class="card-value" id="totalUsers">0</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="card-icon green">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Tổng Khách Hàng</h3>
+                        <p class="card-value" id="totalCustomers">0</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="card-icon orange">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>KYC Chờ Duyệt</h3>
+                        <p class="card-value" id="pendingKyc">0</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="card-icon purple">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Tổng Giao Dịch</h3>
+                        <p class="card-value" id="totalTransactions">0</p>
+                    </div>
+                </div>
+
+                <div class="info-card full">
+                    <div class="card-icon teal">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Tổng Số Tiền Giao Dịch</h3>
+                        <p class="card-value" id="totalAmount">0 VNĐ</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Users Section -->
+        <section id="users" class="section">
+            <h2 class="section-title">Danh Sách Người Dùng</h2>
+
+            <div class="filter-bar">
+                <select id="roleFilter" class="filter-select">
+                    <option value="">Tất cả vai trò</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="STAFF">Nhân viên</option>
+                    <option value="CUSTOMER">Khách hàng</option>
+                </select>
+                <select id="statusFilter" class="filter-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="ACTIVE">Hoạt động</option>
+                    <option value="LOCKED">Đã khóa</option>
+                </select>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên đăng nhập</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Accounts Section -->
+        <section id="accounts" class="section">
+            <h2 class="section-title">Danh Sách Tài Khoản Ngân Hàng</h2>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mã TK</th>
+                            <th>Mã KH</th>
+                            <th>Số Tài Khoản</th>
+                            <th>Số Dư</th>
+                            <th>Trạng Thái</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTableBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- KYC Pending Section -->
+        <section id="kyc-pending" class="section">
+            <h2 class="section-title">KYC Chờ Duyệt</h2>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mã KH</th>
+                            <th>Họ tên</th>
+                            <th>Số CCCD</th>
+                            <th>Email</th>
+                            <th>Số điện thoại</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kycTableBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- User Detail Section -->
+        <section id="user-detail" class="section">
+            <h2 class="section-title">Chi Tiết Người Dùng</h2>
+
+            <div class="search-container">
+                <div class="search-box-wrapper">
+                    <div class="search-input-group">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="number" id="userIdInput" class="search-input" placeholder="Nhập mã người dùng để tìm kiếm...">
+                        <button onclick="loadUserDetail()" class="btn-search">
+                            Tìm kiếm
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="userDetailContent" class="user-detail-container">
+                <div class="empty-state">
+                    <i class="fas fa-user-search"></i>
+                    <p>Nhập mã người dùng để xem chi tiết</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer class="footer">
+        © 2026 VCB Admin - Ngân hàng trực tuyến
+    </footer>
+
+    <script src="../js/admin-dashboard.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác Minh Danh Tính (KYC)</title>
+    <link rel="stylesheet" href="../css/customer-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>VCB<span>Digibank</span></h1>
+            </div>
+            <div class="user-info">
+                <span class="welcome">Xin chào, <strong id="userName">Khách hàng</strong></span>
+                <button onclick="dangXuat()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </header>
+
+        <!-- Menu điều hướng -->
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fas fa-home"></i> Trang chủ
+            </a>
+            <a href="transfer.html" class="nav-item">
+                <i class="fas fa-exchange-alt"></i> Chuyển tiền
+            </a>
+            <a href="transaction-history.html" class="nav-item">
+                <i class="fas fa-history"></i> Lịch sử GD
+            </a>
+            <a href="customer-profile.html" class="nav-item">
+                <i class="fas fa-user"></i> Thông tin cá nhân
+            </a>
+        </nav>
+
+        <!-- Nội dung chính -->
+        <main class="main-content">
+            <h2>Xác minh danh tính (KYC)</h2>
+            
+            <div id="thongBao" class="thong-bao"></div>
+            
+            <div class="cards">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-id-card"></i>
+                        <h3>Gửi yêu cầu xác minh</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="formKyc" class="kyc-form">
+                            <div class="form-group">
+                                <label for="soCMND">Số CMND/CCCD: <span class="required">*</span></label>
+                                <input type="text" id="soCMND" name="soCMND" placeholder="Nhập số CMND/CCCD (12 số)" required>
+                                <small>Nhập đúng 12 chữ số căn cước công dân</small>
+                            </div>
+                            
+                            <div class="actions">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Gửi xác minh
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 VCB Digibank - Ngân hàng trực tuyến</p>
+        </footer>
+    </div>
+    
+    <script src="../js/customer-kyc.js" defer></script>
+</body>
+</html>
