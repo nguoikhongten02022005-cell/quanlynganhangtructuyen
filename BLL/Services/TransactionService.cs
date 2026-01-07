@@ -2,6 +2,7 @@ using DAL;
 using Model.DTOs;
 using Model.Requests;
 using System;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace BLL.Services
@@ -69,7 +70,14 @@ namespace BLL.Services
                 throw new Exception("Không thể chuyển tiền cho chính mình.");
             }
 
-            string maOTP = new Random().Next(100000, 999999).ToString();
+            // Kiểm tra trạng thái tài khoản nhận
+            var taiKhoanNhanInfo = await _taiKhoanDAL.GetTrangThaiTaiKhoanByMaTaiKhoanAsync(maTaiKhoanNhan.Value);
+            if (taiKhoanNhanInfo == null || taiKhoanNhanInfo.Value.TrangThai != "ACTIVE")
+            {
+                throw new Exception("Tài khoản nhận đã bị khóa hoặc không hợp lệ.");
+            }
+
+            string maOTP = GenerateSecureOTP();
             DateTime thoiHanOTP = DateTime.Now.AddMinutes(5);
 
             var giaoDichId = await _giaoDichDAL.ThemGiaoDichAsync(
@@ -89,8 +97,26 @@ namespace BLL.Services
             };
         }
 
-        public async Task<object> XacNhanOTPVaChuyenTienAsync(int maGiaoDich, string maOTP)
+        private string GenerateSecureOTP()
         {
+            byte[] randomBytes = new byte[4];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            int randomNumber = Math.Abs(BitConverter.ToInt32(randomBytes, 0)) % 1000000;
+            return randomNumber.ToString("D6");
+        }
+
+        public async Task<object> XacNhanOTPVaChuyenTienAsync(int maNguoiDung, int maGiaoDich, string maOTP)
+        {
+            // Kiểm tra ownership: giao dịch có thuộc về user này không
+            var maTaiKhoanCuaUser = await _taiKhoanDAL.GetMaTaiKhoanByMaNguoiDungAsync(maNguoiDung);
+            if (maTaiKhoanCuaUser == null)
+            {
+                throw new Exception("Không tìm thấy tài khoản của bạn.");
+            }
+
             var giaoDichInfo = await _giaoDichDAL.GetGiaoDichByIdAsync(maGiaoDich);
             if (giaoDichInfo == null)
             {
@@ -98,6 +124,12 @@ namespace BLL.Services
             }
 
             var (maTaiKhoanGui, maTaiKhoanNhan, soTien, noiDung, trangThai, maOTPDAL, thoiHanOTP) = giaoDichInfo.Value;
+
+            // Kiểm tra giao dịch có thuộc về user này không
+            if (maTaiKhoanGui != maTaiKhoanCuaUser.Value)
+            {
+                throw new Exception("Bạn không có quyền xác nhận giao dịch này!");
+            }
 
             if (trangThai != "PENDING")
             {
@@ -115,13 +147,11 @@ namespace BLL.Services
                 throw new Exception("Mã OTP đã hết hạn!");
             }
 
-            var ketQua = await _giaoDichDAL.ChuyenTienAsync(maTaiKhoanGui, maTaiKhoanNhan, soTien, noiDung);
+            var ketQua = await _giaoDichDAL.ChuyenTienAsync(maGiaoDich, maTaiKhoanGui, maTaiKhoanNhan, soTien, noiDung);
             if (ketQua != "SUCCESS")
             {
                 throw new Exception("Chuyển tiền thất bại.");
             }
-
-            await _giaoDichDAL.CapNhatTrangThaiGiaoDichAsync(maGiaoDich, "SUCCESS", DateTime.Now);
 
             return new
             {

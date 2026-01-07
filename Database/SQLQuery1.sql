@@ -139,6 +139,7 @@ GO
 
 -- STORED PROCEDURE: CHUYEN TIEN AN TOAN (CO KIEM TRA TAI KHOAN NHAN)
 CREATE PROCEDURE SP_ChuyenTien
+    @MaGiaoDich INT,
     @MaTaiKhoanGui INT,
     @MaTaiKhoanNhan INT,
     @SoTien DECIMAL(15,2),
@@ -151,7 +152,6 @@ BEGIN
     BEGIN TRY
         DECLARE @SoDuGui DECIMAL(15,2);
         DECLARE @SoDuNhan DECIMAL(15,2);
-        DECLARE @MaGiaoDich INT;
         
         -- 1. Kiem tra so du TAI KHOAN GUI (UPDLOCK: khoa row de tranh race condition)
         SELECT @SoDuGui = SoDu 
@@ -191,11 +191,10 @@ BEGIN
         SET SoDu = SoDu + @SoTien
         WHERE MaTaiKhoan = @MaTaiKhoanNhan;
         
-        -- 5. Luu giao dich SUCCESS
-        INSERT INTO GiaoDich (MaTaiKhoanGui, MaTaiKhoanNhan, SoTien, NoiDung, TrangThai, NgayGiaoDich)
-        VALUES (@MaTaiKhoanGui, @MaTaiKhoanNhan, @SoTien, @NoiDung, 'SUCCESS', GETDATE());
-        
-        SET @MaGiaoDich = SCOPE_IDENTITY();
+        -- 5. Cap nhat giao dich tu PENDING -> SUCCESS
+        UPDATE GiaoDich 
+        SET TrangThai = 'SUCCESS', NgayGiaoDich = GETDATE()
+        WHERE MaGiaoDich = @MaGiaoDich;
         
         COMMIT TRANSACTION;
         
