@@ -9,7 +9,8 @@ namespace Model.Requests
     public class KycApproveRequest
     {
         public int CustomerId { get; set; }
-        public string Status { get; set; } = ""; // ACTIVE hoặc REJECT
+        // Chỉ chấp nhận: APPROVED hoặc REJECTED
+        public string Status { get; set; } = "";
         public string? Reason { get; set; }
     }
 }

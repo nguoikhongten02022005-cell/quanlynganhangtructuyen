@@ -2,7 +2,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Thêm YARP Reverse Proxy
 builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+    .ConfigureHttpClient((context, handler) =>
+    {
+        // Bỏ qua kiểm tra SSL certificate
+        handler.SslOptions.RemoteCertificateValidationCallback =
+            (sender, certificate, chain, errors) => true;
+    });
 
 // Cấu hình CORS (nếu cần gọi từ domain khác)
 builder.Services.AddCors(options =>

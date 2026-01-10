@@ -72,7 +72,7 @@ async function layThongTinTaiKhoan() {
         
         if (response.ok) {
             const data = await response.json();
-            myAccountNumber = data.data.soTaiKhoan;
+            myAccountNumber = data.soTaiKhoan;
         }
     } catch (error) {
         console.error('Error:', error);

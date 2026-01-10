@@ -96,14 +96,16 @@ namespace BLL.Services
             return await _khachHangDAL.GetDanhSachKYCPendingAsync();
         }
 
-        public async Task<object> DuyetKYCAsync(int customerId, string status, string? reason = null)
+        public async Task<object> DuyetKYCAsync(int maKhachHang, string status, string? reason = null)
         {
+            status = (status ?? string.Empty).Trim().ToUpperInvariant();
+
             if (status != "APPROVED" && status != "REJECTED")
             {
                 throw new Exception("Trạng thái không hợp lệ. Chỉ chấp nhận APPROVED hoặc REJECTED.");
             }
 
-            var khachHangInfo = await _khachHangDAL.GetKhachHangInfoByMaNguoiDungAsync(customerId);
+            var khachHangInfo = await _khachHangDAL.GetKhachHangInfoByMaKhachHangAsync(maKhachHang);
             if (khachHangInfo == null)
             {
                 throw new Exception("Không tìm thấy khách hàng.");
@@ -114,13 +116,12 @@ namespace BLL.Services
                 throw new Exception("Hồ sơ KYC không ở trạng thái chờ duyệt.");
             }
 
-            await _khachHangDAL.CapNhatTrangThaiKYCAsync(customerId, status);
+            await _khachHangDAL.CapNhatTrangThaiKYCAsync(maKhachHang, status);
 
             return new
             {
                 thongBao = status == "APPROVED" ? "Duyệt KYC thành công." : "Từ chối KYC thành công.",
                 maKhachHang = khachHangInfo.Value.MaKhachHang,
-                maNguoiDung = customerId,
                 trangThaiMoi = status,
                 lyDo = reason
             };

@@ -1,4 +1,5 @@
 using DAL.Interfaces;
+using DAL;
 using Model.Requests;
 using Model.DTOs;
 using System;
@@ -11,15 +12,24 @@ namespace BLL.Services
         private readonly INguoiDungRepository _nguoiDungRepo;
         private readonly IKhachHangRepository _khachHangRepo;
         private readonly ITaiKhoanRepository _taiKhoanRepo;
+        private readonly PasswordResetDAL _passwordResetDal;
 
         public AuthService(
             INguoiDungRepository nguoiDungRepo,
             IKhachHangRepository khachHangRepo,
-            ITaiKhoanRepository taiKhoanRepo)
+            ITaiKhoanRepository taiKhoanRepo,
+            PasswordResetDAL passwordResetDal)
         {
             _nguoiDungRepo = nguoiDungRepo;
             _khachHangRepo = khachHangRepo;
             _taiKhoanRepo = taiKhoanRepo;
+            _passwordResetDal = passwordResetDal;
+        }
+
+        private static string TaoTokenNgauNhien()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString();
         }
 
         public async Task<object> DangKyKhachHangAsync(DangKyRequest request)
@@ -109,6 +119,60 @@ namespace BLL.Services
             string matKhauHashMoi = BCrypt.Net.BCrypt.HashPassword(matKhauMoi);
 
             await _nguoiDungRepo.CapNhatMatKhauAsync(maNguoiDung, matKhauHashMoi);
+        }
+
+        public async Task<object> TaoTokenQuenMatKhauAsync(string tenDangNhap)
+        {
+            var nguoiDung = await _nguoiDungRepo.GetNguoiDungByTenDangNhapAsync(tenDangNhap);
+            if (nguoiDung == null)
+            {
+                // Thực tế nên trả 200 để tránh dò user, nhưng bài tập có thể báo lỗi rõ.
+                throw new Exception("Không tìm thấy tài khoản.");
+            }
+
+            // Tạo token + lưu hash vào DB, hết hạn 10 phút
+            var token = TaoTokenNgauNhien();
+            var tokenHash = BCrypt.Net.BCrypt.HashPassword(token);
+            var expiresAt = DateTime.UtcNow.AddMinutes(10);
+
+            await _passwordResetDal.TaoTokenAsync(nguoiDung.MaNguoiDung, tokenHash, expiresAt);
+
+            // Demo: trả token ra response để test (thay vì gửi email/sms)
+            return new
+            {
+                thongBao = "Đã tạo token đặt lại mật khẩu.",
+                tenDangNhap = nguoiDung.TenDangNhap,
+                token = token,
+                hetHanSauPhut = 10
+            };
+        }
+
+        public async Task DatLaiMatKhauAsync(string tenDangNhap, string token, string matKhauMoi)
+        {
+            var nguoiDung = await _nguoiDungRepo.GetNguoiDungByTenDangNhapAsync(tenDangNhap);
+            if (nguoiDung == null)
+            {
+                throw new Exception("Không tìm thấy tài khoản.");
+            }
+
+            // Vì BCrypt mỗi lần hash khác nhau, ta cần truy vấn token hợp lệ theo tokenHash.
+            // Cách đơn giản: lưu tokenHash, khi verify thì phải so với hash.
+            // Ở DAL hiện tại, LayTokenHopLeAsync nhận tokenHash chính xác; để hỗ trợ BCrypt verify,
+            // ta sẽ dùng cách: thử lấy token hợp lệ bằng cách tìm token gần nhất của user rồi verify.
+            // Để giữ thay đổi nhỏ, ta làm truy vấn token gần nhất ngay tại DAL theo hướng bổ sung.
+            // => Thực hiện kiểm tra qua phương thức mới ở DAL (thêm nhẹ ở dưới nếu cần).
+
+            // Fallback: dùng query riêng tại DAL để lấy tokenHash gần nhất còn hiệu lực.
+            var latest = await _passwordResetDal.LayTokenGanNhatHopLeAsync(nguoiDung.MaNguoiDung);
+            if (latest == null)
+                throw new Exception("Token không hợp lệ hoặc đã hết hạn.");
+
+            if (!BCrypt.Net.BCrypt.Verify(token, latest.Value.TokenHash))
+                throw new Exception("Token không đúng.");
+
+            var matKhauHashMoi = BCrypt.Net.BCrypt.HashPassword(matKhauMoi);
+            await _nguoiDungRepo.CapNhatMatKhauAsync(nguoiDung.MaNguoiDung, matKhauHashMoi);
+            await _passwordResetDal.DanhDauDaSuDungAsync(latest.Value.Id);
         }
     }
 }

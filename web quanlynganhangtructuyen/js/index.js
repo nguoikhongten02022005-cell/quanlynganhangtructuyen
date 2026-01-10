@@ -46,7 +46,16 @@ async function callAPI(endpoint, data, options = {}) {
             body: JSON.stringify(data)
         });
 
-        const result = await response.json();
+        // Some endpoints may return an empty body (204) or invalid JSON.
+        // Read text first and only parse if non-empty to avoid "Unexpected end of JSON input".
+        const text = await response.text();
+        let result = {};
+        try {
+            result = text ? JSON.parse(text) : {};
+        } catch (parseError) {
+            console.error(`Invalid JSON response from ${endpoint}:`, text);
+            throw new Error('Phản hồi không hợp lệ từ server');
+        }
 
         if (response.ok) return result;
         throw new Error(result.thongBao || 'Thất bại');
