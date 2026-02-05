@@ -11,6 +11,6 @@ namespace Model.Requests
     {
         public string UserName { get; set;} = "";
         public string Password { get; set;} = "";
-        public string Role { get; set;} = "STAFF"; // ADMIN hoặc STAFF
+        public string Role { get; set;} = "STAFF";
     }
 }

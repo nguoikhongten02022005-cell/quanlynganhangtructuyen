@@ -94,6 +94,22 @@ CREATE TABLE LichSuDangNhap (
 );
 GO
 
+-- Bảng token đặt lại mật khẩu (quên mật khẩu)
+CREATE TABLE PasswordResetToken (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    MaNguoiDung INT NOT NULL,
+    TokenHash VARCHAR(128) NOT NULL,
+    ExpiresAt DATETIME2 NOT NULL,
+    UsedAt DATETIME2 NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    FOREIGN KEY (MaNguoiDung) REFERENCES NguoiDung(MaNguoiDung)
+);
+GO
+
+CREATE INDEX IX_PasswordResetToken_MaNguoiDung_CreatedAt ON PasswordResetToken(MaNguoiDung, CreatedAt DESC);
+CREATE INDEX IX_PasswordResetToken_TokenHash ON PasswordResetToken(TokenHash);
+GO
+
 -- Bang ghi chu cua nhan vien (Staff Module)
 CREATE TABLE GhiChuKhachHang (
     MaGhiChu INT PRIMARY KEY IDENTITY(1,1),

@@ -67,12 +67,12 @@ async function loadDashboard() {
             const data = await response.json();
             const stats = data.data;
 
-            document.getElementById('totalUsers').textContent = stats.TongNguoiDung;
-            document.getElementById('totalCustomers').textContent = stats.TongKhachHang;
-            document.getElementById('pendingKyc').textContent = stats.SoKYCChoDuyet;
-            document.getElementById('totalTransactions').textContent = stats.TongGiaoDich;
+            document.getElementById('totalUsers').textContent = stats.tongNguoiDung;
+            document.getElementById('totalCustomers').textContent = stats.tongKhachHang;
+            document.getElementById('pendingKyc').textContent = stats.soKYCChoDuyet;
+            document.getElementById('totalTransactions').textContent = stats.tongGiaoDich;
             document.getElementById('totalAmount').textContent =
-                new Intl.NumberFormat('vi-VN').format(stats.TongSoTienGiaoDich) + ' VNĐ';
+                new Intl.NumberFormat('vi-VN').format(stats.tongSoTienGiaoDich) + ' VNĐ';
         } else {
             console.error('Dashboard API error:', response.status);
             showToast('Không thể tải thống kê', 'error');
@@ -116,16 +116,19 @@ async function loadUsers() {
             users.forEach(user => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${user.MaNguoiDung}</td>
-                    <td>${user.TenDangNhap}</td>
-                    <td>${user.HoTen || 'N/A'}</td>
-                    <td>${user.Email || 'N/A'}</td>
-                    <td><span class="badge ${getBadgeClass(user.VaiTro)}">${user.VaiTro}</span></td>
-                    <td><span class="badge ${user.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.TrangThai}</span></td>
+                    <td>${user.maNguoiDung}</td>
+                    <td>${user.tenDangNhap}</td>
+                    <td>${user.hoTen || 'N/A'}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td><span class="badge ${getBadgeClass(user.vaiTro)}">${user.vaiTro}</span></td>
+                    <td><span class="badge ${user.trangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.trangThai}</span></td>
                     <td>
-                        <button class="btn ${user.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
-                                onclick="lockUser(${user.MaNguoiDung}, ${user.TrangThai === 'ACTIVE'})">
-                            ${user.TrangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                        <button class="btn ${user.trangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockUser(${user.maNguoiDung}, ${user.trangThai === 'ACTIVE'})">
+                            ${user.trangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                        </button>
+                        <button class="btn btn-warning" onclick="resetPassword(${user.maNguoiDung})" title="Reset mật khẩu">
+                            <i class="fas fa-key"></i>
                         </button>
                     </td>
                 `;
@@ -149,14 +152,13 @@ function getBadgeClass(role) {
 // Lock/Unlock User
 async function lockUser(userId, shouldLock) {
     try {
-        const response = await fetch(`${API_URL}/user/lock`, {
+        const response = await fetch(`${API_URL}/admin/users/${userId}/lock`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                maNguoiDung: userId,
                 khoa: shouldLock
             })
         });
@@ -164,8 +166,94 @@ async function lockUser(userId, shouldLock) {
         if (response.ok) {
             showToast(shouldLock ? 'Đã khóa người dùng' : 'Đã mở khóa người dùng');
             loadUsers();
+            // Reload user detail nếu đang xem
+            const userIdInput = document.getElementById('userIdInput');
+            if (userIdInput && userIdInput.value == userId) {
+                loadUserDetail();
+            }
         } else {
-            showToast('Có lỗi xảy ra', 'error');
+            const error = await response.json();
+            showToast(error.thongBao || 'Có lỗi xảy ra', 'error');
+        }
+    } catch (error) {
+        showToast('Có lỗi xảy ra', 'error');
+    }
+}
+
+// Reset Password (Admin only)
+async function resetPassword(userId) {
+    const newPassword = prompt('Nhập mật khẩu mới (ít nhất 6 ký tự):');
+    if (!newPassword) return;
+    
+    if (newPassword.length < 6) {
+        showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/admin/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                matKhauMoi: newPassword
+            })
+        });
+
+        if (response.ok) {
+            showToast('Đã reset mật khẩu thành công');
+        } else {
+            const error = await response.json();
+            showToast(error.thongBao || error.message || 'Có lỗi xảy ra', 'error');
+        }
+    } catch (error) {
+        showToast('Có lỗi xảy ra', 'error');
+    }
+}
+
+// View Account Detail
+async function viewAccountDetail(accountId) {
+    try {
+        const response = await fetch(`${API_URL}/admin/accounts/${accountId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            const acc = result.data;
+            
+            // Tạo modal hiển thị chi tiết
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Chi tiết tài khoản ngân hàng</h3>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="detail-item"><label>Mã tài khoản:</label><span>${acc.maTaiKhoan}</span></div>
+                        <div class="detail-item"><label>Số tài khoản:</label><span>${acc.soTaiKhoan}</span></div>
+                        <div class="detail-item"><label>Mã khách hàng:</label><span>${acc.maKhachHang}</span></div>
+                        <div class="detail-item"><label>Loại tài khoản:</label><span>${acc.loaiTaiKhoan || 'Thanh toán'}</span></div>
+                        <div class="detail-item"><label>Số dư:</label><span>${new Intl.NumberFormat('vi-VN').format(acc.soDu)} VNĐ</span></div>
+                        <div class="detail-item"><label>Trạng thái:</label><span class="badge ${acc.trangThai === 'ACTIVE' ? 'success' : 'danger'}">${acc.trangThai}</span></div>
+                        <div class="detail-item"><label>Ngày mở:</label><span>${acc.ngayMo ? new Date(acc.ngayMo).toLocaleString('vi-VN') : 'N/A'}</span></div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Click outside to close
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+        } else {
+            showToast('Không tìm thấy tài khoản', 'error');
         }
     } catch (error) {
         showToast('Có lỗi xảy ra', 'error');
@@ -196,14 +284,14 @@ async function loadKYCPending() {
             kycList.forEach(kyc => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${kyc.MaKhachHang}</td>
-                    <td>${kyc.HoTen}</td>
-                    <td>${kyc.SoCCCD || 'N/A'}</td>
-                    <td>${kyc.Email || 'N/A'}</td>
-                    <td>${kyc.SoDienThoai || 'N/A'}</td>
+                    <td>${kyc.maKhachHang}</td>
+                    <td>${kyc.hoTen}</td>
+                    <td>${kyc.soCCCD || 'N/A'}</td>
+                    <td>${kyc.email || 'N/A'}</td>
+                    <td>${kyc.soDienThoai || 'N/A'}</td>
                     <td>
-                        <button class="btn btn-success" onclick="approveKYC(${kyc.MaKhachHang}, 'APPROVED')">Duyệt</button>
-                        <button class="btn btn-danger" onclick="approveKYC(${kyc.MaKhachHang}, 'REJECTED')">Từ chối</button>
+                        <button class="btn btn-success" onclick="approveKYC(${kyc.maKhachHang}, 'APPROVED')">Duyệt</button>
+                        <button class="btn btn-danger" onclick="approveKYC(${kyc.maKhachHang}, 'REJECTED')">Từ chối</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -278,10 +366,10 @@ async function loadUserDetail() {
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="user-detail-info">
-                            <h3>${user.HoTen || user.TenDangNhap}</h3>
+                            <h3>${user.hoTen || user.tenDangNhap}</h3>
                             <div class="user-meta">
-                                <span class="badge ${getBadgeClass(user.VaiTro)}">${user.VaiTro}</span>
-                                <span class="badge ${user.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.TrangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}</span>
+                                <span class="badge ${getBadgeClass(user.vaiTro)}">${user.vaiTro}</span>
+                                <span class="badge ${user.trangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.trangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}</span>
                             </div>
                         </div>
                     </div>
@@ -289,35 +377,38 @@ async function loadUserDetail() {
                     <div class="user-detail-body">
                         <div class="detail-item">
                             <label>Mã người dùng</label>
-                            <div class="value">${user.MaNguoiDung}</div>
+                            <div class="value">${user.maNguoiDung}</div>
                         </div>
                         <div class="detail-item">
                             <label>Tên đăng nhập</label>
-                            <div class="value">${user.TenDangNhap}</div>
+                            <div class="value">${user.tenDangNhap}</div>
                         </div>
                         <div class="detail-item">
                             <label>Họ tên</label>
-                            <div class="value">${user.HoTen || 'Chưa cập nhật'}</div>
+                            <div class="value">${user.hoTen || 'Chưa cập nhật'}</div>
                         </div>
                         <div class="detail-item">
                             <label>Email</label>
-                            <div class="value">${user.Email || 'Chưa cập nhật'}</div>
+                            <div class="value">${user.email || 'Chưa cập nhật'}</div>
                         </div>
                         <div class="detail-item">
                             <label>Vai trò</label>
-                            <div class="value">${user.VaiTro}</div>
+                            <div class="value">${user.vaiTro}</div>
                         </div>
                         <div class="detail-item">
                             <label>Ngày tạo</label>
-                            <div class="value">${new Date(user.NgayTao).toLocaleString('vi-VN')}</div>
+                            <div class="value">${new Date(user.ngayTao).toLocaleString('vi-VN')}</div>
                         </div>
                     </div>
 
                     <div class="user-detail-actions">
-                        <button class="btn ${user.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
-                                onclick="lockUser(${user.MaNguoiDung}, ${user.TrangThai === 'ACTIVE'})">
-                            <i class="fas fa-${user.TrangThai === 'ACTIVE' ? 'lock' : 'lock-open'}"></i>
-                            ${user.TrangThai === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                        <button class="btn ${user.trangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockUser(${user.maNguoiDung}, ${user.trangThai === 'ACTIVE'})">
+                            <i class="fas fa-${user.trangThai === 'ACTIVE' ? 'lock' : 'lock-open'}"></i>
+                            ${user.trangThai === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                        </button>
+                        <button class="btn btn-warning" onclick="resetPassword(${user.maNguoiDung})">
+                            <i class="fas fa-key"></i> Reset mật khẩu
                         </button>
                     </div>
                 </div>
@@ -365,15 +456,18 @@ async function loadAccounts() {
             accounts.forEach(acc => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${acc.MaTaiKhoan}</td>
-                    <td>${acc.MaKhachHang}</td>
-                    <td>${acc.SoTaiKhoan}</td>
-                    <td>${new Intl.NumberFormat('vi-VN').format(acc.SoDu)} VNĐ</td>
-                    <td><span class="badge ${acc.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${acc.TrangThai}</span></td>
+                    <td>${acc.maTaiKhoan}</td>
+                    <td>${acc.maKhachHang}</td>
+                    <td>${acc.soTaiKhoan}</td>
+                    <td>${new Intl.NumberFormat('vi-VN').format(acc.soDu)} VNĐ</td>
+                    <td><span class="badge ${acc.trangThai === 'ACTIVE' ? 'success' : 'danger'}">${acc.trangThai}</span></td>
                     <td>
-                        <button class="btn ${acc.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
-                                onclick="lockAccount(${acc.MaTaiKhoan}, ${acc.TrangThai === 'ACTIVE'})">
-                            ${acc.TrangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                        <button class="btn btn-primary" onclick="viewAccountDetail(${acc.maTaiKhoan})" title="Xem chi tiết">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn ${acc.trangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockAccount(${acc.maTaiKhoan}, ${acc.trangThai === 'ACTIVE'})">
+                            ${acc.trangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
                         </button>
                     </td>
                 `;
@@ -411,6 +505,62 @@ async function lockAccount(accountId, shouldLock) {
     } catch (error) {
         showToast('Có lỗi xảy ra', 'error');
     }
+}
+
+// Change Password Form Handler
+const changePasswordForm = document.getElementById('changePasswordForm');
+if (changePasswordForm) {
+    changePasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const oldPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        // Validate
+        if (newPassword.length < 6) {
+            showToast('Mật khẩu mới phải có ít nhất 6 ký tự!', 'error');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showToast('Mật khẩu nhập lại không khớp!', 'error');
+            return;
+        }
+
+        const submitBtn = changePasswordForm.querySelector('.btn-success');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+
+        try {
+            const response = await fetch(`${API_URL}/auth/change-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    matKhauCu: oldPassword,
+                    matKhauMoi: newPassword
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showToast(data.thongBao || 'Đổi mật khẩu thành công!');
+                changePasswordForm.reset();
+            } else {
+                showToast(data.thongBao || 'Đổi mật khẩu thất bại!', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Lỗi kết nối server!', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+        }
+    });
 }
 
 // Load initial data

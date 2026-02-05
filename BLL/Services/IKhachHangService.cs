@@ -11,7 +11,7 @@ namespace BLL.Services
         Task<KhachHangProfileDTO> LayThongTinHoSoAsync(int maNguoiDung);
         Task<TaiKhoanDTO> LayThongTinTaiKhoanAsync(int maNguoiDung);
         Task<object> LayDanhSachKycPendingAsync();
-        Task<object> DuyetKYCAsync(int customerId, string status, string? reason = null);
+        Task<object> DuyetKYCAsync(int maKhachHang, string status, string? reason = null);
         Task<List<KYCPendingDTO>> LayDanhSachKYCChoDuyetAsync();
         Task<object> CapNhatThongTinCaNhanAsync(int maNguoiDung, UpdateProfileRequest request);
     }

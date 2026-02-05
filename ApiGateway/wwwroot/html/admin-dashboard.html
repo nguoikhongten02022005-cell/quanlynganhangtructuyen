@@ -25,7 +25,7 @@
         </div>
     </header>
 
-    <!-- Navigation -->
+        <!-- Navigation -->
     <nav class="nav-tabs">
         <a href="#" class="nav-tab active" data-section="dashboard">
             <i class="fas fa-home"></i> Tổng Quan
@@ -41,6 +41,9 @@
         </a>
         <a href="#" class="nav-tab" data-section="user-detail">
             <i class="fas fa-user-circle"></i> Chi Tiết User
+        </a>
+        <a href="#" class="nav-tab" data-section="change-password">
+            <i class="fas fa-key"></i> Đổi Mật Khẩu
         </a>
     </nav>
 
@@ -207,6 +210,43 @@
                 <div class="empty-state">
                     <i class="fas fa-user-search"></i>
                     <p>Nhập mã người dùng để xem chi tiết</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Change Password Section -->
+        <section id="change-password" class="section">
+            <h2 class="section-title">Đổi Mật Khẩu</h2>
+            
+            <div class="card" style="max-width: 500px;">
+                <div class="card-header">
+                    <i class="fas fa-key"></i>
+                    <h3>Thay đổi mật khẩu tài khoản</h3>
+                </div>
+                <div class="card-body">
+                    <form id="changePasswordForm">
+                        <div class="form-group">
+                            <label for="oldPassword">Mật khẩu hiện tại: <span style="color: #e74c3c;">*</span></label>
+                            <input type="password" id="oldPassword" class="form-control" placeholder="Nhập mật khẩu hiện tại" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newPassword">Mật khẩu mới: <span style="color: #e74c3c;">*</span></label>
+                            <input type="password" id="newPassword" class="form-control" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)" required minlength="6">
+                            <small style="color: #888;">Mật khẩu phải có ít nhất 6 ký tự</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">Xác nhận mật khẩu mới: <span style="color: #e74c3c;">*</span></label>
+                            <input type="password" id="confirmPassword" class="form-control" placeholder="Nhập lại mật khẩu mới" required>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </section>

@@ -5,9 +5,6 @@ using System.Threading.Tasks;
 
 namespace DAL;
 
-/// <summary>
-/// Data Access Layer for KhachHang table
-/// </summary>
 public class KhachHangDAL
 {
     private readonly NganHangContext _context;
@@ -113,12 +110,24 @@ public class KhachHangDAL
         return (reader.GetInt32(0), reader.GetString(1));
     }
 
-    public async Task<int> CapNhatTrangThaiKYCAsync(int maNguoiDung, string trangThaiKYC)
+    public async Task<(int MaKhachHang, string TrangThaiKYC)?> GetKhachHangInfoByMaKhachHangAsync(int maKhachHang)
     {
         await using var conn = await GetOpenConnectionAsync();
-        var cmd = new SqlCommand("UPDATE KhachHang SET TrangThaiKYC = @TrangThaiKYC WHERE MaNguoiDung = @MaNguoiDung", conn);
+        var cmd = new SqlCommand("SELECT MaKhachHang, TrangThaiKYC FROM KhachHang WHERE MaKhachHang = @MaKhachHang", conn);
+        cmd.Parameters.AddWithValue("@MaKhachHang", maKhachHang);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync()) return null;
+
+        return (reader.GetInt32(0), reader.GetString(1));
+    }
+
+    public async Task<int> CapNhatTrangThaiKYCAsync(int maKhachHang, string trangThaiKYC)
+    {
+        await using var conn = await GetOpenConnectionAsync();
+        var cmd = new SqlCommand("UPDATE KhachHang SET TrangThaiKYC = @TrangThaiKYC WHERE MaKhachHang = @MaKhachHang", conn);
         cmd.Parameters.AddWithValue("@TrangThaiKYC", trangThaiKYC);
-        cmd.Parameters.AddWithValue("@MaNguoiDung", maNguoiDung);
+        cmd.Parameters.AddWithValue("@MaKhachHang", maKhachHang);
         return await cmd.ExecuteNonQueryAsync();
     }
 

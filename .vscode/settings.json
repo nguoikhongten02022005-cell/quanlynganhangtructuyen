@@ -1,5 +1,8 @@
 {
     "liveServer.settings.port": 5504,
     "kiroAgent.configureMCP": "Disabled",
-    "chatgpt.openOnStartup": true
+    "chatgpt.openOnStartup": true,
+    "ollamaProxy.remote.protocol": "http",
+    "ollamaProxy.remote.host": "localhost",
+    "ollamaProxy.remote.port": 8317
 }

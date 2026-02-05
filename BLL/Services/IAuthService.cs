@@ -14,5 +14,11 @@ namespace BLL.Services
 
         // Hàm đổi mật khẩu
         Task DoiMatKhauAsync(int maNguoiDung, string matKhauCu, string matKhauMoi);
+
+        // Quên mật khẩu: tạo token đặt lại mật khẩu
+        Task<object> TaoTokenQuenMatKhauAsync(string tenDangNhap);
+
+        // Đặt lại mật khẩu: xác thực token + đổi mật khẩu mới
+        Task DatLaiMatKhauAsync(string tenDangNhap, string token, string matKhauMoi);
     }
 }

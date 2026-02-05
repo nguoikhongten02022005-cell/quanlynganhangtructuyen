@@ -25,6 +25,7 @@ builder.Services.AddScoped<NguoiDungDAL>();
 builder.Services.AddScoped<KhachHangDAL>();
 builder.Services.AddScoped<TaiKhoanDAL>();
 builder.Services.AddScoped<GiaoDichDAL>();
+builder.Services.AddScoped<PasswordResetDAL>();
 
 // Đăng ký các Repositories
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();

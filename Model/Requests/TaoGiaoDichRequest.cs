@@ -7,9 +7,6 @@ using System.Threading.Tasks;
 
 namespace Model.Requests
 {
-    /// <summary>
-    /// Request để khởi tạo giao dịch chuyển tiền với OTP
-    /// </summary>
     public class TaoGiaoDichRequest
     {
         /// <summary>

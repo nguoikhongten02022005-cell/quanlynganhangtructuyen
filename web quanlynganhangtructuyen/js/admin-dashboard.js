@@ -67,12 +67,12 @@ async function loadDashboard() {
             const data = await response.json();
             const stats = data.data;
 
-            document.getElementById('totalUsers').textContent = stats.TongNguoiDung;
-            document.getElementById('totalCustomers').textContent = stats.TongKhachHang;
-            document.getElementById('pendingKyc').textContent = stats.SoKYCChoDuyet;
-            document.getElementById('totalTransactions').textContent = stats.TongGiaoDich;
+            document.getElementById('totalUsers').textContent = stats.tongNguoiDung;
+            document.getElementById('totalCustomers').textContent = stats.tongKhachHang;
+            document.getElementById('pendingKyc').textContent = stats.soKYCChoDuyet;
+            document.getElementById('totalTransactions').textContent = stats.tongGiaoDich;
             document.getElementById('totalAmount').textContent =
-                new Intl.NumberFormat('vi-VN').format(stats.TongSoTienGiaoDich) + ' VNĐ';
+                new Intl.NumberFormat('vi-VN').format(stats.tongSoTienGiaoDich) + ' VNĐ';
         } else {
             console.error('Dashboard API error:', response.status);
             showToast('Không thể tải thống kê', 'error');
@@ -116,16 +116,16 @@ async function loadUsers() {
             users.forEach(user => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${user.MaNguoiDung}</td>
-                    <td>${user.TenDangNhap}</td>
-                    <td>${user.HoTen || 'N/A'}</td>
-                    <td>${user.Email || 'N/A'}</td>
-                    <td><span class="badge ${getBadgeClass(user.VaiTro)}">${user.VaiTro}</span></td>
-                    <td><span class="badge ${user.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.TrangThai}</span></td>
+                    <td>${user.maNguoiDung}</td>
+                    <td>${user.tenDangNhap}</td>
+                    <td>${user.hoTen || 'N/A'}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td><span class="badge ${getBadgeClass(user.vaiTro)}">${user.vaiTro}</span></td>
+                    <td><span class="badge ${user.trangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.trangThai}</span></td>
                     <td>
-                        <button class="btn ${user.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
-                                onclick="lockUser(${user.MaNguoiDung}, ${user.TrangThai === 'ACTIVE'})">
-                            ${user.TrangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                        <button class="btn ${user.trangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockUser(${user.maNguoiDung}, ${user.trangThai === 'ACTIVE'})">
+                            ${user.trangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
                         </button>
                     </td>
                 `;
@@ -149,14 +149,13 @@ function getBadgeClass(role) {
 // Lock/Unlock User
 async function lockUser(userId, shouldLock) {
     try {
-        const response = await fetch(`${API_URL}/user/lock`, {
+        const response = await fetch(`${API_URL}/admin/users/${userId}/lock`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                maNguoiDung: userId,
                 khoa: shouldLock
             })
         });
@@ -196,14 +195,14 @@ async function loadKYCPending() {
             kycList.forEach(kyc => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${kyc.MaKhachHang}</td>
-                    <td>${kyc.HoTen}</td>
-                    <td>${kyc.SoCCCD || 'N/A'}</td>
-                    <td>${kyc.Email || 'N/A'}</td>
-                    <td>${kyc.SoDienThoai || 'N/A'}</td>
+                    <td>${kyc.maKhachHang}</td>
+                    <td>${kyc.hoTen}</td>
+                    <td>${kyc.soCCCD || 'N/A'}</td>
+                    <td>${kyc.email || 'N/A'}</td>
+                    <td>${kyc.soDienThoai || 'N/A'}</td>
                     <td>
-                        <button class="btn btn-success" onclick="approveKYC(${kyc.MaKhachHang}, 'APPROVED')">Duyệt</button>
-                        <button class="btn btn-danger" onclick="approveKYC(${kyc.MaKhachHang}, 'REJECTED')">Từ chối</button>
+                        <button class="btn btn-success" onclick="approveKYC(${kyc.maKhachHang}, 'APPROVED')">Duyệt</button>
+                        <button class="btn btn-danger" onclick="approveKYC(${kyc.maKhachHang}, 'REJECTED')">Từ chối</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -278,10 +277,10 @@ async function loadUserDetail() {
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="user-detail-info">
-                            <h3>${user.HoTen || user.TenDangNhap}</h3>
+                            <h3>${user.hoTen || user.tenDangNhap}</h3>
                             <div class="user-meta">
-                                <span class="badge ${getBadgeClass(user.VaiTro)}">${user.VaiTro}</span>
-                                <span class="badge ${user.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.TrangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}</span>
+                                <span class="badge ${getBadgeClass(user.vaiTro)}">${user.vaiTro}</span>
+                                <span class="badge ${user.trangThai === 'ACTIVE' ? 'success' : 'danger'}">${user.trangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}</span>
                             </div>
                         </div>
                     </div>
@@ -289,35 +288,35 @@ async function loadUserDetail() {
                     <div class="user-detail-body">
                         <div class="detail-item">
                             <label>Mã người dùng</label>
-                            <div class="value">${user.MaNguoiDung}</div>
+                            <div class="value">${user.maNguoiDung}</div>
                         </div>
                         <div class="detail-item">
                             <label>Tên đăng nhập</label>
-                            <div class="value">${user.TenDangNhap}</div>
+                            <div class="value">${user.tenDangNhap}</div>
                         </div>
                         <div class="detail-item">
                             <label>Họ tên</label>
-                            <div class="value">${user.HoTen || 'Chưa cập nhật'}</div>
+                            <div class="value">${user.hoTen || 'Chưa cập nhật'}</div>
                         </div>
                         <div class="detail-item">
                             <label>Email</label>
-                            <div class="value">${user.Email || 'Chưa cập nhật'}</div>
+                            <div class="value">${user.email || 'Chưa cập nhật'}</div>
                         </div>
                         <div class="detail-item">
                             <label>Vai trò</label>
-                            <div class="value">${user.VaiTro}</div>
+                            <div class="value">${user.vaiTro}</div>
                         </div>
                         <div class="detail-item">
                             <label>Ngày tạo</label>
-                            <div class="value">${new Date(user.NgayTao).toLocaleString('vi-VN')}</div>
+                            <div class="value">${new Date(user.ngayTao).toLocaleString('vi-VN')}</div>
                         </div>
                     </div>
 
                     <div class="user-detail-actions">
-                        <button class="btn ${user.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
-                                onclick="lockUser(${user.MaNguoiDung}, ${user.TrangThai === 'ACTIVE'})">
-                            <i class="fas fa-${user.TrangThai === 'ACTIVE' ? 'lock' : 'lock-open'}"></i>
-                            ${user.TrangThai === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                        <button class="btn ${user.trangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockUser(${user.maNguoiDung}, ${user.trangThai === 'ACTIVE'})">
+                            <i class="fas fa-${user.trangThai === 'ACTIVE' ? 'lock' : 'lock-open'}"></i>
+                            ${user.trangThai === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                         </button>
                     </div>
                 </div>
@@ -365,15 +364,15 @@ async function loadAccounts() {
             accounts.forEach(acc => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${acc.MaTaiKhoan}</td>
-                    <td>${acc.MaKhachHang}</td>
-                    <td>${acc.SoTaiKhoan}</td>
-                    <td>${new Intl.NumberFormat('vi-VN').format(acc.SoDu)} VNĐ</td>
-                    <td><span class="badge ${acc.TrangThai === 'ACTIVE' ? 'success' : 'danger'}">${acc.TrangThai}</span></td>
+                    <td>${acc.maTaiKhoan}</td>
+                    <td>${acc.maKhachHang}</td>
+                    <td>${acc.soTaiKhoan}</td>
+                    <td>${new Intl.NumberFormat('vi-VN').format(acc.soDu)} VNĐ</td>
+                    <td><span class="badge ${acc.trangThai === 'ACTIVE' ? 'success' : 'danger'}">${acc.trangThai}</span></td>
                     <td>
-                        <button class="btn ${acc.TrangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
-                                onclick="lockAccount(${acc.MaTaiKhoan}, ${acc.TrangThai === 'ACTIVE'})">
-                            ${acc.TrangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                        <button class="btn ${acc.trangThai === 'ACTIVE' ? 'btn-danger' : 'btn-success'}"
+                                onclick="lockAccount(${acc.maTaiKhoan}, ${acc.trangThai === 'ACTIVE'})">
+                            ${acc.trangThai === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
                         </button>
                     </td>
                 `;
